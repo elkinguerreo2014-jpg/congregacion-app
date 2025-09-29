@@ -1,0 +1,1920 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>congregacion_app</title>
+
+<!-- Librería PDF (sin SRI para evitar bloqueos por hash inválido) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<style>
+:root{--bg:#0b1224;--card:#151b31;--line:#243055;--text:#e9eeff;--muted:#a9b3cb;--accent:#6aa8ff}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto}
+h1,h2,h3{margin:0 0 .5rem}
+.top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.top .periodo{display:flex;gap:8px;align-items:center}
+.top input,.top select{background:#0f1630;border:1px solid var(--line);color:var(--text);padding:6px 8px;border-radius:10px}
+.badge{border:1px solid var(--line);padding:4px 10px;border-radius:999px}
+.badge.ok{border-color:#295;background:#103}
+.btn{background:#0f1630;border:1px solid var(--line);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.container{max-width:1200px;margin:0 auto;padding:16px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:1000px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.section-title{margin:8px 0 12px}
+label{display:block;font-size:13px;margin:6px 0 2px;color:var(--muted)}
+input,select,textarea{background:#0f1630;border:1px solid var(--line);color:var(--text);padding:8px;border-radius:10px}
+input[type="number"],input[type="date"],input[type="text"],input[type="file"],input[type="search"],input[type="url"]{width:100%}
+textarea{width:100%;min-height:36px;resize:vertical}
+.row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.small{font-size:12px;color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:12px 0}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{border-bottom:1px solid var(--line);padding:8px 6px;font-size:14px;vertical-align:top}
+.table th{color:var(--muted);font-weight:600;text-align:left}
+.kpi{display:flex;gap:12px;flex-wrap:wrap}
+.kpi>div{background:#0f1736;border:1px solid var(--line);border-radius:12px;padding:10px 14px;min-width:160px;text-align:center}
+.kpi span{display:block;font-size:22px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.tabs button{background:#0f1630;border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:10px;cursor:pointer}
+.tabs button.active,.tabs button:hover{border-color:var(--accent)}
+.tab{display:none}.tab.active{display:block}
+.readonly .container :is(input,button,select,textarea){pointer-events:none;opacity:.6}
+@media print{.top,.tabs,.admin-only-tools{display:none!important}.card{border:0}.container{max-width:100%}}
+.badge-role{padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px}
+.badge-pr{background:#1a2a3a}
+.badge-pa{background:#1a2a1a}
+.badge-pub{background:#2a1a1a}
+
+/* Tarjeta S-21-S (A4) */
+.card-persona{
+  max-width: 210mm; background:#fff; color:#111;
+  border:1px solid #222; border-radius:8px; margin:10px auto; padding:14px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+.card-persona .s21-head{
+  display:grid; grid-template-columns:2fr 1fr; gap:10px; align-items:center;
+  border-bottom:2px solid #222; padding-bottom:8px; margin-bottom:8px;
+}
+.card-persona .s21-title{font-size:18px; font-weight:800; letter-spacing:.2px}
+.card-persona .s21-sub{font-size:12px;color:#333}
+.s21-fieldrow{display:grid; grid-template-columns:1.6fr 1.2fr 1.2fr 1fr; gap:10px; margin:6px 0 10px}
+.s21-f{border:1px solid #999; border-radius:6px; padding:6px 8px; min-height:34px; font-size:13px; display:flex; gap:6px; align-items:center; justify-content:space-between}
+.s21-f label{font-weight:600; color:#333; font-size:12px}
+.s21-badges{display:flex; gap:6px; flex-wrap:wrap}
+.s21-badge{display:inline-block; padding:2px 8px; border:1px solid #777; border-radius:999px; font-size:11px; background:#f6f6f8}
+.s21{width:100%; border-collapse:collapse; margin-top:6px}
+.s21 th,.s21 td{border:1px solid #333; padding:6px 6px; font-size:12.5px}
+.s21 th{background:#f1f2f6; text-align:center}
+.s21 td:nth-child(1){width:18%}
+.s21 td:nth-child(2){width:16%; text-align:center}
+.s21 td:nth-child(3){width:14%; text-align:right}
+.s21 td:nth-child(4){width:16%; text-align:center}
+.s21 td:nth-child(5){width:14%; text-align:right}
+.s21 td:nth-child(6){width:auto}
+.s21-foot{display:flex; justify-content:space-between; gap:12px; margin-top:10px; font-size:12px; color:#333}
+.s21-foot .line{min-width:220px; border-top:1px solid #555; padding-top:3px; text-align:center}
+
+@media print{
+  body{background:#fff}
+  .card-persona{border:0; box-shadow:none; margin:0; width:190mm; max-width:190mm; page-break-inside:avoid}
+}
+
+/* contenedor oculto para PDF por lotes (NO usar display:none ni visibility:hidden) */
+#pdf-batch{
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 794px;
+  background: #fff;
+  color: #111;
+  padding: 0;
+  margin: 0;
+}
+.page-break{ page-break-after: always }
+.pdf-page{ width:794px; background:#fff; color:#111 }
+
+/* S-88-S: imprimir limpio */
+@media print{
+  #s88panel{border:0}
+  #s88panel .table th, #s88panel .table td{border-color:#888}
+}
+
+/* Resaltado temporal para hallazgo en Personas */
+.hl-persona { outline: 2px solid #6aa8ff; animation: blinkHL .9s ease 2; }
+@keyframes blinkHL { 50% { outline-color: transparent; } }
+
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="periodo">
+    <h1 style="font-size:18px;margin-right:12px">Congregación – Gestión mensual</h1>
+    <label>Año <input type="number" id="anio" min="2000" max="2100"></label>
+    <label>Mes
+      <select id="mes">
+        <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+        <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+        <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+        <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+      </select>
+    </label>
+  </div>
+  <div class="periodo">
+    <span id="auth" class="badge">Bloqueado</span>
+    <button class="btn" id="btnAcceso">🔒 Acceso</button>
+    <!-- NUEVO: botón Admin que abre el mismo modal -->
+    <button class="btn" id="btnAdmin" title="Abrir panel de administración">Admin</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button data-tab="personas" class="active">1) Personas (todas)</button>
+    <button data-tab="entradas">2) Entradas por grupo</button>
+    <button data-tab="grupos">3) Grupos</button>
+    <button data-tab="tarjeta">4) Tarjeta (S-21-S)</button>
+    <button data-tab="asistencia">5) Asistencia</button>
+    <button data-tab="resumen">6) Resumen mensual</button>
+    <button data-tab="anual">7) Resumen anual / Drive</button>
+    <button data-tab="s88">8) S-88-S asistencias</button>
+  
+  <button data-tab="pr">9) PR (lista)</button>
+  <button data-tab="pa">10) PA (lista)</button>
+</div>
+
+  <!-- PERSONAS -->
+  <section id="personas" class="tab active">
+    <div class="card section-title"><h2>Personas (todas)</h2><p class="small">Alta/baja y cambios SOLO aquí.</p></div>
+    <div class="card">
+      <div class="row admin-only-tools">
+        <div style="flex:2">
+          <label>Nombre</label>
+          <input type="text" id="pNombre" placeholder="Nombre y apellido">
+        </div>
+        <div>
+          <label>Grupo</label>
+          <select id="pGrupo">
+            <option value="1">Grupo 1</option><option value="2">Grupo 2</option><option value="3">Grupo 3</option>
+            <option value="4">Grupo 4</option><option value="5">Grupo 5</option>
+          </select>
+        </div>
+        <div>
+          <label>Precursor regular</label>
+          <select id="pPR"><option value="0">No</option><option value="1">Sí</option></select>
+        </div>
+        <div>
+          <label>Fecha de nacimiento</label>
+          <input type="date" id="pNac" placeholder="AAAA-MM-DD">
+        </div>
+        <div>
+          <label>Fecha de bautismo</label>
+          <input type="date" id="pBau" placeholder="AAAA-MM-DD">
+        </div>
+        <div>
+          <label>Sexo</label>
+          <select id="pSexo"><option value="">—</option><option>Hombre</option><option>Mujer</option></select>
+        </div>
+        <div>
+          <label>Esperanza</label>
+          <select id="pEsp"><option value="">—</option><option>Otras ovejas</option><option>Ungido</option></select>
+        </div>
+        <div>
+          <label>Privilegios</label>
+          <div class="row" style="align-items:center">
+            <label class="small"><input type="checkbox" id="pAnc"> Anciano</label>
+            <label class="small"><input type="checkbox" id="pSM"> Siervo ministerial</label>
+            <label class="small"><input type="checkbox" id="pPE"> Precursor especial</label>
+            <label class="small"><input type="checkbox" id="pMis"> Misionero</label>
+          </div>
+        </div>
+        <div><button class="btn" id="btnAdd">Añadir</button></div>
+      </div>
+
+      <div class="row admin-only-tools">
+        <div style="flex:1">
+          <label>Importar CSV (nombre,grupo,pr[,nac][,bau][,sexo][,esperanza][,anciano][,sm][,pe][,mis])</label>
+          <input type="file" id="csv" accept=".csv">
+        </div>
+        <div><button class="btn" id="btnImport">Importar</button></div>
+      </div>
+
+<div class="row admin-only-tools">
+  <label class="small"><input type="checkbox" id="chkDelAll"> Habilitar eliminar todas las personas</label>
+  <button class="btn" id="btnDelAll" title="Eliminar TODAS las personas de la congregación">Eliminar TODAS</button>
+  <button class="btn" id="btnBackupAll" title="Exportar copia de seguridad (JSON)">Exportar copia (JSON)</button>
+</div>
+
+<div class="row admin-only-tools">
+  <label class="small" for="qPersona">Búsqueda rápida para editar</label>
+  <input type="search" id="qPersona" placeholder="Escribe nombre y Enter..." list="personasList" style="max-width:360px">
+  <datalist id="personasList"></datalist>
+  <button class="btn" id="btnQPersona">Editar</button>
+</div>
+
+<div class="row admin-only-tools">
+  <button class="btn" id="btnSyncNowPersonas" title="Guardar (igual que en Resumen anual)">Guardar</button>
+</div>
+
+<div class="row admin-only-tools">
+  <label class="small" for="qRenameFrom">Corregir nombre (dos pasos)</label>
+  <input type="search" id="qRenameFrom" placeholder="Nombre actual..." list="personasList" style="max-width:280px">
+  <input type="text" id="qRenameTo" placeholder="Nuevo nombre..." style="max-width:280px">
+  <button class="btn" id="btnRenamePersona">Renombrar</button>
+</div>
+
+      <table class="table" id="tblPersonas">
+        <thead>
+          <tr>
+            <th>Nombre</th><th>Grupo</th><th>PR</th>
+            <th>Nacimiento</th><th>Bautismo</th><th>Sexo</th><th>Esperanza</th>
+            <th>Anc.</th><th>SM</th><th>PE</th><th>Mis.</th>
+            <th>Override</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="small">Override: el administrador puede marcar <i>Irregular</i> o <i>Inactivo</i>. Al quitar la marca, se vuelve a calcular por los últimos 6 meses.</p>
+    </div>
+  </section>
+
+  <!-- ENTRADAS POR GRUPO -->
+  <section id="entradas" class="tab">
+    <div class="card section-title"><h2>Entradas por grupo (mes actual)</h2></div>
+    <div class="card">
+      <div class="row">
+        <label>Grupo
+          <select id="fGrupo">
+            <option value="1">Grupo 1</option><option value="2">Grupo 2</option><option value="3">Grupo 3</option>
+            <option value="4">Grupo 4</option><option value="5">Grupo 5</option>
+          </select>
+        </label>
+        <span class="small">PR = rol fijo. PA = marcar este mes para habilitar horas.</span>
+      </div>
+      <table class="table" id="tblEntradas">
+        <thead>
+          <tr>
+            <th>Nombre</th><th>Rol mes</th><th>PA este mes</th><th>Predicó</th><th>Horas</th><th>Estudios</th><th>Notas</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- GRUPOS -->
+  <section id="grupos" class="tab">
+    <div class="card section-title"><h2>Grupos</h2></div>
+    <div class="card">
+      <div class="row" id="grpTabs">
+        <button class="btn" data-g="1">Grupo 1</button>
+        <button class="btn" data-g="2">Grupo 2</button>
+        <button class="btn" data-g="3">Grupo 3</button>
+        <button class="btn" data-g="4">Grupo 4</button>
+        <button class="btn" data-g="5">Grupo 5</button>
+      </div>
+
+      <div class="row admin-only-tools" id="grpExportRow">
+        <button class="btn" id="btnExportGrupo">Descargar lista del grupo</button>
+      </div>
+      <div class="kpi">
+        <div><span id="gCount">0</span>Personas en el grupo</div>
+        <div><span id="gPR">0</span>Precursores regulares</div>
+        <div><span id="gPA">0</span>Precursores auxiliares (este mes)</div>
+      </div>
+      <hr>
+      <table class="table" id="tblGrupo">
+        <thead><tr><th>Nombre</th><th>Rol fijo</th><th>PA (mes)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TARJETA (S-21-S) -->
+  <section id="tarjeta" class="tab">
+    <div class="card section-title"><h2>Tarjeta (Registro de publicador S-21-S)</h2><p class="small">Periodo septiembre → agosto.</p></div>
+    <div class="card">
+      <div class="row">
+        <div style="flex:2">
+          <label>Buscar por nombre</label>
+          <input type="search" id="cardName" list="namesList" placeholder="Escribe el nombre">
+          <datalist id="namesList"></datalist>
+        </div>
+        <div>
+          <label>Año de servicio (inicio en septiembre)</label>
+          <input type="number" id="cardSY" min="2000" max="2100">
+        </div>
+        <div style="align-self:end"><button class="btn" id="btnVerTarjeta">Ver tarjeta</button></div>
+        <div style="align-self:end"><button class="btn" id="btnPrintCard">Imprimir tarjeta</button></div>
+        <div style="align-self:end"><button class="btn" id="btnPdfCard">Descargar PDF (tarjeta)</button></div>
+      </div>
+      <hr>
+      <div class="row">
+        <div>
+          <label>Descargar tarjetas por grupo</label>
+          <div class="row">
+            <select id="pdfGrupoSel">
+              <option value="1">Grupo 1</option><option value="2">Grupo 2</option>
+              <option value="3">Grupo 3</option><option value="4">Grupo 4</option><option value="5">Grupo 5</option>
+            </select>
+            <button class="btn" id="btnPdfGrupo">PDF grupo</button>
+            <button class="btn" id="btnPrintGrupo">Imprimir grupo</button>
+          </div>
+        </div>
+        <div>
+          <label>Descargar todas las tarjetas</label>
+          <div class="row"><button class="btn" id="btnPdfTodas">PDF todas</button>
+            <button class="btn" id="btnPrintTodas">Imprimir todas</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="cardPanel" class="card-persona">
+      <p class="small">Selecciona un nombre y un año de servicio, luego pulsa “Ver tarjeta”.</p>
+    </div>
+  </section>
+
+  <!-- ASISTENCIA -->
+  <section id="asistencia" class="tab">
+    <div class="card section-title"><h2>Asistencia del mes</h2></div>
+    <div class="card">
+      <div class="grid-2">
+        <div>
+          <h3>Entre semana</h3>
+          <div class="grid-3">
+            <div><label>Sem 1</label><input type="number" id="es1" min="0" step="1"></div>
+            <div><label>Sem 2</label><input type="number" id="es2" min="0" step="1"></div>
+            <div><label>Sem 3</label><input type="number" id="es3" min="0" step="1"></div>
+            <div><label>Sem 4</label><input type="number" id="es4" min="0" step="1"></div>
+            <div><label>Sem 5</label><input type="number" id="es5" min="0" step="1"></div>
+            <div><label>Sem 6</label><input type="number" id="es6" min="0" step="1"></div>
+          </div>
+        </div>
+        <div>
+          <h3>Fin de semana</h3>
+          <div class="grid-3">
+            <div><label>Sem 1</label><input type="number" id="fs1" min="0" step="1"></div>
+            <div><label>Sem 2</label><input type="number" id="fs2" min="0" step="1"></div>
+            <div><label>Sem 3</label><input type="number" id="fs3" min="0" step="1"></div>
+            <div><label>Sem 4</label><input type="number" id="fs4" min="0" step="1"></div>
+            <div><label>Sem 5</label><input type="number" id="fs5" min="0" step="1"></div>
+            <div><label>Sem 6</label><input type="number" id="fs6" min="0" step="1"></div>
+          </div>
+        </div>
+      </div>
+      <hr>
+      <div class="kpi">
+        <div><span id="esTot">0</span>Total entre semana</div>
+        <div><span id="esProm">0</span>Promedio entre semana</div>
+        <div><span id="fsTot">0</span>Total fin de semana</div>
+        <div><span id="fsProm">0</span>Promedio fin de semana</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESUMEN MENSUAL -->
+  <section id="resumen" class="tab">
+    <div class="card section-title"><h2>Resumen mensual</h2></div>
+    <div class="card print-area">
+      <div class="kpi">
+        <div><span id="rmPubAct">0</span>Publicadores activos (PR + PA + PUB que predicaron)</div>
+        <div><span id="rmIrreg">0</span>Irregulares</div>
+        <div><span id="rmInact">0</span>Inactivos</div>
+        <div><span id="rmTotalN">0</span>Cant. total de publicadores de congregación</div>
+      </div>
+      <hr>
+      <div class="grid-3">
+        <div>
+          <h3>Publicadores</h3>
+          <p>Informes: <b id="rmPubInf">0</b></p>
+          <p>Estudios: <b id="rmPubEst">0</b></p>
+        </div>
+        <div>
+          <h3>Precursores Auxiliares</h3>
+          <p>Cantidad de informes: <b id="rmPAInf">0</b></p>
+          <p>Horas: <b id="rmPAHor">0</b></p>
+          <p>Cursos bíblicos: <b id="rmPAEst">0</b></p>
+        </div>
+        <div>
+          <h3>Precursores Regulares</h3>
+          <p>Cantidad de informes: <b id="rmPRInf">0</b></p>
+          <p>Horas: <b id="rmPRHor">0</b></p>
+          <p>Cursos bíblicos: <b id="rmPREst">0</b></p>
+        </div>
+      </div>
+      <hr>
+      <p>Asistencia entre semana — Total: <b id="rmEsTot">0</b> | Promedio: <b id="rmEsProm">0</b></p>
+      <p>Asistencia fin de semana — Total: <b id="rmFsTot">0</b> | Promedio: <b id="rmFsProm">0</b></p>
+      <p>Total Congregación (PUB+PR+PA): <b id="rmCongTot">0</b></p>
+      <div class="row"><button class="btn" id="btnImprimir">🖨️ Imprimir / PDF</button></div>
+    </div>
+  </section>
+
+  <!-- RESUMEN ANUAL / DRIVE -->
+  <section id="anual" class="tab">
+    <div class="card section-title"><h2>Resumen anual</h2></div>
+<div class="card">
+  <div class="row">
+    <label>Año de servicio (inicia en septiembre)
+      <input type="number" id="anSY" min="2000" max="2100">
+    </label>
+    <div class="pill" id="anSYLabel" style="margin-left:8px"></div>
+  </div>
+</div>
+
+    <div class="card">
+      <div class="grid-2">
+        <div>
+          <table class="table">
+            <tbody>
+              <tr><td>Horas PR (año)</td><td id="raPRH" style="text-align:right">0</td></tr>
+              <tr><td>Estudios PR (año)</td><td id="raPRE" style="text-align:right">0</td></tr>
+              <tr><td>Horas PA (año)</td><td id="raPAH" style="text-align:right">0</td></tr>
+              <tr><td>Estudios PA (año)</td><td id="raPAE" style="text-align:right">0</td></tr>
+              <tr><td>Estudios Publicadores (año)</td><td id="raPUBE" style="text-align:right">0</td></tr>
+              <tr><td>Informes Publicadores (año)</td><td id="raPUBI" style="text-align:right">0</td></tr>
+              <tr><td>Irregulares (a fecha actual)</td><td id="raIRR" style="text-align:right">0</td></tr>
+              <tr><td>Total Congregación (suma mensual)</td><td id="raCONG" style="text-align:right">0</td></tr>
+              <tr><td>FS total (año)</td><td id="raFST" style="text-align:right">0</td></tr>
+              <tr><td>FS promedio (año)</td><td id="raFSP" style="text-align:right">0</td></tr>
+              <tr><td>ES total (año)</td><td id="raEST" style="text-align:right">0</td></tr>
+              <tr><td>ES promedio (año)</td><td id="raESP" style="text-align:right">0</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h3>Google Drive</h3>
+          <p class="small">Conecta tu Web App (Apps Script) para guardar/restaurar y ver lo mismo en PC y móvil.</p>
+          <div class="row admin-only">
+            <input type="url" id="syncUrl" placeholder="URL Web App (termina en /exec)">
+            <input type="text" id="syncToken" placeholder="Token secreto">
+            <label class="small"><input type="checkbox" id="syncEnabled"> activar</label>
+          </div>
+          <div class="row admin-only">
+            <button class="btn" id="btnSyncNow">Guardar ahora</button>
+            <button class="btn" id="btnTestSync">Probar conexión</button>
+            <button class="btn" id="btnOpenMonth">Abrir copia del mes</button>
+            <button class="btn" id="btnRestoreMonth">Restaurar (mes actual)</button>
+            <button class="btn" id="btnRestoreLatest">Restaurar (último)</button>
+            <button class="btn" id="btnRestoreJSON">Restaurar con copia .json</button> <input type="file" id="fileRestoreJSON" accept=".json,application/json" style="display:none"> <span id="syncMsg" class="small"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- S-88-S (Asistencias) -->
+  <section id="s88" class="tab">
+    <div class="card section-title">
+      <h2>Formulario S-88-S — Registro de asistencia</h2>
+      <p class="small">Se auto-completa con los datos de “Asistencia del mes”. Periodo del <b>año de servicio</b> (septiembre → agosto).</p>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Año de servicio (inicio en septiembre)</label>
+          <input type="number" id="s88SY" min="2000" max="2100">
+        </div>
+        <div style="align-self:end">
+          <button class="btn" id="btnS88pdf">Descargar PDF (S-88-S)</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="s88panel" class="card" style="background:#fff;color:#111;border-color:#ddd">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <h3 style="margin:0 0 6px">REGISTRO DE ASISTENCIA A LAS REUNIONES DE CONGREGACIÓN (S-88-S)</h3>
+          <div class="small" id="s88syLbl">Año de servicio: —</div>
+        </div>
+        <div class="small">Generado: <span id="s88genDate"></span></div>
+      </div>
+
+      <div style="margin-top:10px">
+        <h4 style="margin:8px 0">Reunión de entre semana</h4>
+        <table class="table" id="tblS88ES" style="color:#111">
+          <thead>
+            <tr>
+              <th>Mes</th>
+              <th>N.º reuniones</th>
+              <th>Asistencia total</th>
+              <th>Promedio</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <td><b>Total año</b></td>
+              <td id="s88ES_cnt" style="text-align:right">0</td>
+              <td id="s88ES_tot" style="text-align:right">0</td>
+              <td id="s88ES_avg" style="text-align:right">0.0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div style="margin-top:16px">
+        <h4 style="margin:8px 0">Reunión del fin de semana</h4>
+        <table class="table" id="tblS88FS" style="color:#111">
+          <thead>
+            <tr>
+              <th>Mes</th>
+              <th>N.º reuniones</th>
+              <th>Asistencia total</th>
+              <th>Promedio</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <td><b>Total año</b></td>
+              <td id="s88FS_cnt" style="text-align:right">0</td>
+              <td id="s88FS_tot" style="text-align:right">0</td>
+              <td id="s88FS_avg" style="text-align:right">0.0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="small" style="margin-top:10px;color:#333">
+        Nota: el “N.º de reuniones” cuenta sólo las semanas con un número &gt; 0. El promedio = total / N.º de reuniones.
+      </div>
+    </div>
+  </section>
+</div>
+
+
+<!-- PR (lista) -->
+<section id="pr" class="tab">
+  <div class="card section-title"><h2>Precursores Regulares (lista)</h2></div>
+  <div class="card">
+    <table class="table" id="tblPR">
+      <thead>
+        <tr><th>Nombre</th><th>Grupo</th><th>Privilegios</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- PA (lista) -->
+<section id="pa" class="tab">
+  <div class="card section-title">
+    <h2>Precursores Auxiliares (lista)</h2>
+    <p class="small">Se muestran los meses del <b>año de servicio</b> actual (septiembre → agosto) en los que fue auxiliar.</p>
+  </div>
+  <div class="card">
+    <div class="row">
+      <label>Año de servicio (inicio en septiembre)
+        <input type="number" id="paSY" min="2000" max="2100">
+      </label>
+    </div>
+    <table class="table" id="tblPA">
+      <thead>
+        <tr><th>Nombre</th><th>Grupo</th><th>Mes(es) como auxiliar</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- Contenedor oculto para PDF por lotes -->
+<div id="pdf-batch"></div>
+
+<!-- MODAL ACCESO / ADMIN -->
+<div id="modal" style="position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center">
+  <div class="card" style="max-width:460px;width:92%">
+    <h3>Acceso de administrador</h3>
+    <div id="mLogin">
+      <label>Clave</label><input type="password" id="mPwd" placeholder="•••••">
+      <div class="row" style="margin-top:10px"><button class="btn" id="mEnter">Entrar</button><button class="btn" id="mClose">Cerrar</button></div>
+    </div>
+    <div id="mAdmin" style="display:none">
+      <div class="row" style="margin-bottom:8px"><button class="btn" id="mLogout">Cerrar sesión</button></div><hr>
+      <h4>Cambiar clave</h4>
+      <div class="row">
+        <input type="password" id="mNew1" placeholder="Nueva clave">
+        <input type="password" id="mNew2" placeholder="Repetir">
+        <button class="btn" id="mSavePwd">Guardar</button>
+      </div>
+      <div class="row" style="margin-top:8px"><button class="btn" id="mClose2">Cerrar</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+// ===== ESTADO / CLAVES =====
+const LS='cong_app_state_v6'; // v6: createdYM + fixes
+const PWD='cong_app_pwd_v1';
+const DEFAULT_PWD='12345';
+const SYNC_URL='cong_app_sync_url', SYNC_TOKEN='cong_app_sync_token', SYNC_EN='cong_app_sync_en';
+
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+let state = migrate(load()) || { personas:[], meses:{}, lastSaved:null };
+let Y=new Date().getFullYear(), M=new Date().getMonth()+1;
+
+function ymKey(y,m){ return y+'-'+String(m).padStart(2,'0'); }
+function ymToNum(ym){ const [y,m]=ym.split('-').map(Number); return y*100+m; }
+function ymCompare(a,b){ return ymToNum(a)-ymToNum(b); }
+
+function earliestMonthForPersonIn(st, pid){
+  let min=null;
+  if(st && st.meses){
+    for(const k of Object.keys(st.meses)){
+      const mon=st.meses[k];
+      if(mon && mon.per && mon.per[pid]){
+        if(min===null || ymCompare(k,min)<0) min=k;
+      }
+    }
+  }
+  return min;
+}
+
+function migrate(st){
+  if(!st) return null;
+  // personas base
+  if(Array.isArray(st.personas)){
+    for(const p of st.personas){
+      if(typeof p.nac==='undefined') p.nac='';
+      if(typeof p.bau==='undefined') p.bau='';
+      if(typeof p.sexo==='undefined') p.sexo='';
+      if(typeof p.esperanza==='undefined') p.esperanza='';
+      if(typeof p.anciano==='undefined') p.anciano=false;
+      if(typeof p.sm==='undefined') p.sm=false;
+      if(typeof p.pe==='undefined') p.pe=false;
+      if(typeof p.mis==='undefined') p.mis=false;
+      if(typeof p.createdYM==='undefined'){
+        const guess = earliestMonthForPersonIn(st, p.id);
+        p.createdYM = guess || ymKey(Y,M);
+      }
+    }
+  }
+  // meses base
+  if(st.meses && typeof st.meses==='object'){
+    for(const k of Object.keys(st.meses)){
+      const mon=st.meses[k];
+      if(mon && mon.per){
+        for(const pid of Object.keys(mon.per)){
+          if(typeof mon.per[pid].nota==='undefined') mon.per[pid].nota='';
+        }
+      }
+      if(!Array.isArray(mon.es)) mon.es=[0,0,0,0,0,0];
+      if(!Array.isArray(mon.fs)) mon.fs=[0,0,0,0,0,0];
+    }
+  }
+  return st;
+}
+
+function save(){ localStorage.setItem(LS, JSON.stringify(state)); debounceSync(); }
+function load(){ try{ return JSON.parse(localStorage.getItem(LS)); }catch{ return null; } }
+function nonneg(n){ n=parseFloat(n||0); return isNaN(n)||n<0 ? 0 : n; }
+function getMonth(y,m){ const k=ymKey(y,m); if(!state.meses[k]) state.meses[k]={ per:{}, es:[0,0,0,0,0,0], fs:[0,0,0,0,0,0] }; return state.meses[k]; }
+function mp(y,m,id){ const mon=getMonth(y,m); if(!mon.per[id]) mon.per[id]={ pa:false, predico:false, horas:0, est:0, nota:'' }; return mon.per[id]; }
+function uid(){ return 'p'+Math.random().toString(36).slice(2,10); }
+const MES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// ===== Admin =====
+function getPwd(){ return localStorage.getItem(PWD)||DEFAULT_PWD; }
+function setPwd(v){ localStorage.setItem(PWD, v||DEFAULT_PWD); }
+function isAdmin(){ return sessionStorage.getItem('ADMIN_CONG_APP')==='1'; }
+function setAdmin(on){ if(on) sessionStorage.setItem('ADMIN_CONG_APP','1'); else sessionStorage.removeItem('ADMIN_CONG_APP'); updateAdminUI(); }
+function updateAdminUI(){ $('#auth').textContent=isAdmin()?'Admin':'Bloqueado'; $('#auth').classList.toggle('ok', isAdmin()); document.body.classList.toggle('readonly', !isAdmin()); }
+
+// ===== UI Base =====
+$('#anio').value=Y; $('#mes').value=M;
+$('#anio').addEventListener('change',()=>{ Y=+$('#anio').value||Y; renderAll(); save(); });
+$('#mes').addEventListener('change',()=>{ M=+$('#mes').value||M; renderAll(); save(); });
+$$('.tabs button').forEach(b=>b.addEventListener('click',()=>{ $$('.tabs button').forEach(x=>x.classList.toggle('active',x===b)); $$('.tab').forEach(x=>x.classList.toggle('active', x.id===b.dataset.tab)); }));
+
+// Modal Acceso / Admin
+function openAdminModal(){ $('#modal').style.display='flex'; isAdmin()?showAdmin():showLogin(); }
+$('#btnAcceso').addEventListener('click',openAdminModal);
+$('#btnAdmin').addEventListener('click',openAdminModal);
+$('#mClose').addEventListener('click',()=>$('#modal').style.display='none');
+$('#mClose2').addEventListener('click',()=>$('#modal').style.display='none');
+$('#mEnter').addEventListener('click',()=>{ if(($('#mPwd').value||'')===getPwd()){ setAdmin(true); $('#mPwd').value=''; showAdmin(); } else alert('Clave incorrecta'); });
+$('#mLogout').addEventListener('click',()=>{ setAdmin(false); showLogin(); });
+$('#mSavePwd').addEventListener('click',()=>{ const a=$('#mNew1').value||'', b=$('#mNew2').value||''; if(!a||a.length<3) return alert('Mínimo 3 caracteres.'); if(a!==b) return alert('No coinciden.'); setPwd(a); $('#mNew1').value=''; $('#mNew2').value=''; alert('Clave actualizada.'); });
+function showLogin(){ $('#mLogin').style.display='block'; $('#mAdmin').style.display='none'; }
+function showAdmin(){ $('#mLogin').style.display='none'; $('#mAdmin').style.display='block'; }
+
+// ===== Personas =====
+function renderPersonas(){
+  const tb=$('#tblPersonas tbody'); tb.innerHTML='';
+  state.personas.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+  for(const p of state.personas){
+    const tr=document.createElement('tr');
+    const tdN=document.createElement('td'); tdN.textContent=p.nombre; tr.appendChild(tdN);
+
+    const tdG=document.createElement('td');
+    const selG=document.createElement('select'); [1,2,3,4,5].forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent='Grupo '+g; if(p.grupo==g) o.selected=true; selG.appendChild(o); });
+    selG.addEventListener('change',()=>{ p.grupo=+selG.value; save(); renderEntradas(); renderGrupo(); fillNames(); });
+    tdG.appendChild(selG); tr.appendChild(tdG);
+
+    const tdPR=document.createElement('td');
+    const selPR=document.createElement('select'); [{v:0,t:'No'},{v:1,t:'Sí'}].forEach(o=>{ const opt=document.createElement('option'); opt.value=o.v; opt.textContent=o.t; if((p.pr?1:0)==o.v) opt.selected=true; selPR.appendChild(opt); });
+    selPR.addEventListener('change',()=>{ p.pr = selPR.value==='1'; save(); renderEntradas(); renderGrupo(); renderCardIfSame(p.id); });
+    tdPR.appendChild(selPR); tr.appendChild(tdPR);
+
+    const tdNac=document.createElement('td');
+    const inpNac=document.createElement('input'); inpNac.type='date'; inpNac.value=p.nac||''; inpNac.addEventListener('change',()=>{ p.nac=inpNac.value||''; save(); renderCardIfSame(p.id); });
+    tdNac.appendChild(inpNac); tr.appendChild(tdNac);
+
+    const tdBau=document.createElement('td');
+    const inpBau=document.createElement('input'); inpBau.type='date'; inpBau.value=p.bau||''; inpBau.addEventListener('change',()=>{ p.bau=inpBau.value||''; save(); renderCardIfSame(p.id); });
+    tdBau.appendChild(inpBau); tr.appendChild(tdBau);
+
+    const tdSexo=document.createElement('td');
+    const selSexo=document.createElement('select'); ['', 'Hombre','Mujer'].forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v||'—'; if(p.sexo===v) o.selected=true; selSexo.appendChild(o); });
+    selSexo.addEventListener('change',()=>{ p.sexo=selSexo.value; save(); renderCardIfSame(p.id); });
+    tdSexo.appendChild(selSexo); tr.appendChild(tdSexo);
+
+    const tdEsp=document.createElement('td');
+    const selEsp=document.createElement('select'); ['', 'Otras ovejas','Ungido'].forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v||'—'; if(p.esperanza===v) o.selected=true; selEsp.appendChild(o); });
+    selEsp.addEventListener('change',()=>{ p.esperanza=selEsp.value; save(); renderCardIfSame(p.id); });
+    tdEsp.appendChild(selEsp); tr.appendChild(tdEsp);
+
+    const tdAnc=document.createElement('td'); const cAnc=document.createElement('input'); cAnc.type='checkbox'; cAnc.checked=!!p.anciano; cAnc.addEventListener('change',()=>{ p.anciano=cAnc.checked; save(); renderCardIfSame(p.id); }); tdAnc.appendChild(cAnc); tr.appendChild(tdAnc);
+    const tdSM=document.createElement('td'); const cSM=document.createElement('input'); cSM.type='checkbox'; cSM.checked=!!p.sm; cSM.addEventListener('change',()=>{ p.sm=cSM.checked; save(); renderCardIfSame(p.id); }); tdSM.appendChild(cSM); tr.appendChild(tdSM);
+    const tdPE=document.createElement('td'); const cPE=document.createElement('input'); cPE.type='checkbox'; cPE.checked=!!p.pe; cPE.addEventListener('change',()=>{ p.pe=cPE.checked; save(); renderCardIfSame(p.id); }); tdPE.appendChild(cPE); tr.appendChild(tdPE);
+    const tdMis=document.createElement('td'); const cMis=document.createElement('input'); cMis.type='checkbox'; cMis.checked=!!p.mis; cMis.addEventListener('change',()=>{ p.mis=cMis.checked; save(); renderCardIfSame(p.id); }); tdMis.appendChild(cMis); tr.appendChild(tdMis);
+
+    const tdOv=document.createElement('td');
+    const selOv=document.createElement('select');
+    [{v:'',t:'Auto'},{v:'irregular',t:'Irregular'},{v:'inactivo',t:'Inactivo'}].forEach(o=>{ const opt=document.createElement('option'); opt.value=o.v; opt.textContent=o.t; if((p.override||'')===o.v) opt.selected=true; selOv.appendChild(opt); });
+    selOv.addEventListener('change',()=>{ p.override = selOv.value || null; p.overrideSince = ymKey(Y,M); save(); renderResumen(); renderCardIfSame(p.id); });
+    tdOv.appendChild(selOv); tr.appendChild(tdOv);
+
+    const tdA=document.createElement('td');
+    const del=document.createElement('button'); del.textContent='Eliminar'; del.className='btn';
+    del.addEventListener('click',()=>{ if(confirm('¿Eliminar a '+p.nombre+'?')){ for(const k of Object.keys(state.meses)){ delete state.meses[k]?.per?.[p.id]; } state.personas = state.personas.filter(x=>x.id!==p.id); save(); renderAll(); }});
+    tdA.appendChild(del); tr.appendChild(tdA);
+
+    tb.appendChild(tr);
+  }
+}
+$('#btnAdd').addEventListener('click',()=>{
+  if(!isAdmin()) return alert('Solo admin.');
+  const nombre=($('#pNombre').value||'').trim(); if(!nombre) return alert('Escribe un nombre.');
+  const grupo=+$('#pGrupo').value||1; const pr=$('#pPR').value==='1';
+  const nac=($('#pNac').value||'').trim(); const bau=($('#pBau').value||'').trim();
+  const sexo=$('#pSexo').value||''; const esperanza=$('#pEsp').value||'';
+  const anciano=$('#pAnc').checked; const sm=$('#pSM').checked; const pe=$('#pPE').checked; const mis=$('#pMis').checked;
+  if(state.personas.some(p=>p.nombre.toLowerCase()===nombre.toLowerCase())) return alert('Ese nombre ya existe.');
+  state.personas.push({id:uid(), nombre, grupo, pr, nac, bau, sexo, esperanza, anciano, sm, pe, mis, override:null, overrideSince:null, createdYM: ymKey(Y,M)});
+  $('#pNombre').value=''; $('#pNac').value=''; $('#pBau').value=''; $('#pSexo').value=''; $('#pEsp').value=''; ['pAnc','pSM','pPE','pMis'].forEach(id=>$('#'+id).checked=false);
+  save(); renderAll();
+});
+$('#btnImport').addEventListener('click',()=>{
+  if(!isAdmin()) return alert('Solo admin.');
+  const f=$('#csv').files?.[0]; if(!f) return alert('Selecciona un CSV.');
+  const reader=new FileReader();
+  reader.onload=()=>{ const lines=(reader.result||'').toString().split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    let added=0;
+    for(const ln of lines){
+      const parts=ln.split(',').map(s=> (s||'').trim());
+      const n=parts[0]||''; if(!n) continue;
+      if(state.personas.some(p=>p.nombre.toLowerCase()===n.toLowerCase())) continue;
+      const g=Math.min(5,Math.max(1,parseInt(parts[1])||1));
+      const pr=(String(parts[2]||'').toLowerCase().startsWith('s') || parts[2]==='1');
+      const nac=(parts[3]||''); const bau=(parts[4]||''); const sexo=(parts[5]||''); const esperanza=(parts[6]||'');
+      const anciano=/^(1|s|si|sí|true)$/i.test(parts[7]||''); const sm=/^(1|s|si|sí|true)$/i.test(parts[8]||''); const pe=/^(1|s|si|sí|true)$/i.test(parts[9]||''); const mis=/^(1|s|si|sí|true)$/i.test(parts[10]||'');
+      state.personas.push({id:uid(), nombre:n, grupo:g, pr, nac, bau, sexo, esperanza, anciano, sm, pe, mis, override:null, overrideSince:null, createdYM: ymKey(Y,M)});
+      added++;
+    }
+    save(); renderAll(); alert('Importadas: '+added);
+  };
+  reader.readAsText(f,'utf-8');
+});
+
+
+// ===== Exportar copia de seguridad (JSON) =====
+document.getElementById('btnBackupAll').addEventListener('click', ()=>{
+  if(!isAdmin()) return alert('Solo admin.');
+  try{
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      version: 1,
+      personas: state.personas || [],
+      meses: state.meses || {}
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const y = new Date();
+    const pad = n => (n<10?'0':'')+n;
+    a.href = url;
+    a.download = `backup_congregacion_${y.getFullYear()}-${pad(y.getMonth()+1)}-${pad(y.getDate())}_${pad(y.getHours())}${pad(y.getMinutes())}.json`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 500);
+  }catch(e){
+    console.error(e);
+    alert('No se pudo exportar la copia de seguridad.');
+  }
+});
+
+// ===== Eliminar TODAS las personas (doble confirmación) =====
+document.getElementById('btnDelAll').addEventListener('click', ()=>{
+  if(!isAdmin()) return alert('Solo admin.');
+  const okChk = document.getElementById('chkDelAll').checked;
+  if(!okChk) return alert('Marca la casilla "Habilitar eliminar todas las personas" para continuar.');
+
+  const first = confirm('¿Seguro que deseas eliminar TODAS las personas de la congregación? Esta acción es irreversible.');
+  if(!first) return;
+
+  const second = confirm('CONFIRMACIÓN FINAL: Se eliminarán todas las personas y sus registros vinculados. ¿Deseas continuar?' );
+  if(!second) return;
+
+  try{
+    // Respaldo sugerido (opcional): if(confirm('¿Deseas exportar una copia antes de borrar?')){ document.getElementById('btnBackupAll').click(); }
+    // 1) Vaciar lista de personas
+    state.personas = [];
+    // 2) Borrar referencias en todos los meses
+    if(state.meses && typeof state.meses === 'object'){
+      for(const k of Object.keys(state.meses)){
+        if(state.meses[k] && state.meses[k].per) state.meses[k].per = {};
+      }
+    }
+    save();
+    renderAll();
+    // Reset UI
+    const chk = document.getElementById('chkDelAll'); if(chk) chk.checked = false;
+    alert('Se eliminaron todas las personas.');
+  }catch(e){
+    console.error(e);
+    alert('Ocurrió un error al eliminar. No se completó la operación.');
+  }
+});
+
+
+// ===== Búsqueda rápida para editar persona =====
+function refreshPersonDatalist(){
+  const dl = document.getElementById('personasList');
+  if(!dl) return;
+  const names = (state.personas||[]).map(p=>p.nombre).sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}));
+  const current = Array.from(dl.querySelectorAll('option')).map(o=>o.value);
+  if(current.length===names.length && current.every((v,i)=>v===names[i])) return;
+  dl.innerHTML = names.map(n=>`<option value="${n}"></option>`).join('');
+}
+
+function _norm(s){ return (s||'').toString().trim().toLowerCase(); }
+
+function quickEditByName(raw){
+  const q = _norm(raw);
+  if(!q){ alert('Escribe un nombre.'); return; }
+  const list = state.personas || [];
+  let person = list.find(p=>_norm(p.nombre).startsWith(q));
+  if(!person) person = list.find(p=>_norm(p.nombre).includes(q));
+  if(!person){ alert('No se encontró esa persona.'); return; }
+
+  // Ir a la pestaña Personas
+  const tabBtn = document.querySelector('.tabs [data-tab="personas"]');
+  if(tabBtn){ try{ tabBtn.click(); }catch(e){} }
+
+  // Intentar abrir editor si existe
+  if(typeof window.editPersona === 'function'){ 
+    try{ window.editPersona(person.id); return; }catch(e){ console.warn('editPersona falló:', e); }
+  }
+  if(typeof window.openEditPersona === 'function'){
+    try{ window.openEditPersona(person.id); return; }catch(e){ console.warn('openEditPersona falló:', e); }
+  }
+
+  // Fallback: resaltar fila en la tabla
+  const rows = document.querySelectorAll('#tblPersonas tbody tr');
+  let matched = null;
+  rows.forEach(tr=>{
+    const t = _norm(tr.textContent);
+    if(!matched && t.includes(_norm(person.nombre))) matched = tr;
+  });
+  if(matched){
+    matched.classList.add('hl-persona');
+    matched.scrollIntoView({behavior:'smooth', block:'center'});
+    setTimeout(()=> matched.classList.remove('hl-persona'), 1800);
+  }else{
+    alert('No pude resaltar la fila en la tabla. Intenta con otra coincidencia.');
+  }
+}
+
+// Eventos de búsqueda rápida
+document.addEventListener('click', (e)=>{
+  if(e.target && e.target.id==='btnQPersona'){
+    const v = document.getElementById('qPersona').value;
+    quickEditByName(v);
+  }
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='Enter' && document.activeElement && document.activeElement.id==='qPersona'){
+    e.preventDefault();
+    quickEditByName(document.activeElement.value);
+  }
+});
+
+// ===== Confirmación al guardar cambios en sección Personas =====
+(function(){
+  function isInPersonas(el){
+    if(!el) return false;
+    return !!(el.closest && (el.closest('#personas') || el.closest('#tblPersonas') || el.closest('[data-tab="personas"]')));
+  }
+  // Intercepta clicks en botones "Guardar" dentro de Personas
+  document.addEventListener('click', function(e){
+    const t = e.target;
+    if(!t) return;
+    if(!isInPersonas(t)) return;
+    const txt = (t.textContent||'').toLowerCase();
+    const isSaveBtn = t.matches('button, .btn, [type="submit"]') && (txt.includes('guardar') || txt.includes('guardar cambios'));
+    if(isSaveBtn){
+      const ok = confirm('¿estas seguro que deseas agregar estos cambios?');
+      if(!ok){ e.preventDefault(); e.stopImmediatePropagation(); return; }
+    }
+  }, true);
+  // Intercepta envío de formularios dentro de Personas
+  document.addEventListener('submit', function(e){
+    if(!isInPersonas(e.target)) return;
+    const ok = confirm('¿estas seguro que deseas agregar estos cambios?');
+    if(!ok){ e.preventDefault(); e.stopImmediatePropagation(); }
+  }, true);
+})();
+
+
+// === Guardar desde Personas (reusa el botón de Resumen anual) ===
+(function(){
+  const x = document.getElementById('btnSyncNowPersonas');
+  if(!x) return;
+  x.addEventListener('click', ()=>{
+    const b = document.getElementById('btnSyncNow');
+    if(b){ b.click(); }
+    else if (typeof save === 'function'){ save(); alert('Datos guardados.'); }
+    else { alert('No se encontró acción de guardado.'); }
+  });
+})();
+
+
+// ===== Corregir nombre (dos pasos de confirmación) =====
+(function(){
+  function _norm(s){ return (s||'').toString().trim().toLowerCase(); }
+  function findPersonaByName(raw){
+    const q = _norm(raw);
+    if(!q) return null;
+    const list = state.personas || [];
+    let p = list.find(x => _norm(x.nombre) === q);
+    if(!p) p = list.find(x => _norm(x.nombre).startsWith(q));
+    if(!p) p = list.find(x => _norm(x.nombre).includes(q));
+    return p || null;
+  }
+  const btn = document.getElementById('btnRenamePersona');
+  if(!btn) return;
+  btn.addEventListener('click', ()=>{
+    if(!isAdmin()) return alert('Solo admin.');
+    const from = document.getElementById('qRenameFrom')?.value || '';
+    const to   = document.getElementById('qRenameTo')?.value || '';
+    if(!from.trim()) return alert('Escribe el nombre actual.');
+    if(!to.trim())   return alert('Escribe el nuevo nombre.');
+    if(from.trim() === to.trim()) return alert('El nuevo nombre es igual al actual.');
+
+    const person = findPersonaByName(from);
+    if(!person) return alert('No se encontró la persona con ese nombre.');
+
+    const step1 = confirm(`¿Está seguro que quiere modificar el nombre de "${person.nombre}"?`);
+    if(!step1) return;
+    const step2 = confirm(`CONFIRMACIÓN FINAL: cambiar el nombre a "${to.trim()}"`);
+    if(!step2) return;
+
+    try{
+      person.nombre = to.trim();
+      save && save();
+      if(typeof renderAll === 'function') renderAll();
+      if(typeof refreshPersonDatalist === 'function') try{ refreshPersonDatalist(); }catch(e){}
+      alert('Nombre actualizado correctamente.');
+    }catch(e){
+      console.error(e);
+      alert('No se pudo actualizar el nombre.');
+    }
+  });
+})();
+
+
+// === Descargar lista del grupo: Nombre, Precursor, Privilegio ===
+(function(){
+  function currentGrupo(){
+    const act = document.querySelector('#grpTabs .btn.active');
+    if(act && act.dataset && act.dataset.g) return parseInt(act.dataset.g)||1;
+    const first = document.querySelector('#grpTabs .btn[data-g]');
+    return first ? parseInt(first.dataset.g)||1 : 1;
+  }
+  function personaPrivilegio(p){
+    if(p && p.privilegio) return p.privilegio;
+    if(p && (p.anciano===true || p.rol==='Anciano')) return 'Anciano';
+    if(p && (p.siervo===true || p.siervoMinisterial===true || p.rol==='Siervo ministerial')) return 'Siervo ministerial';
+    return 'Publicador';
+  }
+  function esPrecRegular(p){
+    return !!(p && (p.precursorRegular || p.precRegular || p.regular || p.esPrecursor));
+  }
+  function filaAuxiliar(nombre){
+    const rows = document.querySelectorAll('#tblGrupo tbody tr');
+    for(const tr of rows){
+      const tds = tr.querySelectorAll('td');
+      if(!tds.length) continue;
+      const nm = tds[0]?.textContent?.trim()||'';
+      if(nm === nombre){
+        const pa = (tds[2]?.textContent||'').trim();
+        return !!pa;
+      }
+    }
+    return false;
+  }
+  function download(filename, text){
+    const blob = new Blob([text], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 500);
+  }
+  const btn = document.getElementById('btnExportGrupo');
+  if(!btn) return;
+  btn.addEventListener('click', ()=>{
+    if(!isAdmin()) return alert('Solo admin.');
+    const g = currentGrupo();
+    const list = (state.personas||[]).filter(p=> parseInt(p.grupo||p.idGrupo||0) === g );
+    if(!list.length){ alert('No hay personas en el grupo seleccionado.'); return; }
+    list.sort((a,b)=> (a.nombre||'').localeCompare(b.nombre||'', 'es', {sensitivity:'base'}));
+    const lines = [];
+    lines.push(['Nombre','Precursor','Privilegio'].join(','));
+    for(const p of list){
+      const nombre = (p.nombre||'').replace(/"/g,'""');
+      const precReg = esPrecRegular(p);
+      const isAux = filaAuxiliar(p.nombre||'');
+      let prec = precReg && isAux ? 'Regular + Auxiliar' : (precReg ? 'Regular' : (isAux ? 'Auxiliar' : 'No'));
+      const priv = personaPrivilegio(p).replace(/"/g,'""');
+      lines.push(`"${nombre}",${prec ? '"' + prec + '"' : '""'},"${priv}"`);
+    }
+    const now = new Date(); const pad=n=> (n<10?'0':'')+n;
+    const fname = `lista_grupo_${g}_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}.csv`;
+    download(fname, lines.join('\n'));
+  });
+})();
+
+// ===== Entradas por grupo =====
+$('#fGrupo').addEventListener('change',()=>renderEntradas());
+function roleBadge(p, monthPA){ if(p.pr) return '<span class="badge-role badge-pr">PR</span>'; if(monthPA) return '<span class="badge-role badge-pa">PA</span>'; return '<span class="badge-role badge-pub">PUB</span>'; }
+function renderEntradas(){
+  const g=+$('#fGrupo').value||1, tb=$('#tblEntradas tbody'); tb.innerHTML='';
+  const ps=state.personas.filter(p=>p.grupo==g).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+  for(const p of ps){
+    const mpp=mp(Y,M,p.id);
+    const tr=document.createElement('tr');
+
+    const tdN=document.createElement('td'); tdN.textContent=p.nombre; tr.appendChild(tdN);
+    const tdR=document.createElement('td'); tdR.innerHTML=roleBadge(p, mpp.pa); tr.appendChild(tdR);
+
+    const tdPA=document.createElement('td');
+    const cPA=document.createElement('input'); cPA.type='checkbox'; cPA.checked=!!mpp.pa;
+    cPA.addEventListener('change',()=>{ mpp.pa=cPA.checked; if(!mpp.pa){ mpp.horas=0; } save(); renderEntradas(); renderResumen(); renderGrupo(); renderCardIfSame(p.id); });
+    tdPA.appendChild(cPA); tr.appendChild(tdPA);
+
+    const tdPred=document.createElement('td');
+    const pred=document.createElement('select'); pred.innerHTML='<option value="0">No</option><option value="1">Sí</option>';
+    pred.value = mpp.predico? '1':'0';
+    pred.addEventListener('change',()=>{ mpp.predico=(pred.value==='1'); save(); renderResumen(); renderCardIfSame(p.id); });
+    pred.disabled = (p.pr || mpp.pa);
+    tdPred.appendChild(pred); tr.appendChild(tdPred);
+
+    const tdH=document.createElement('td');
+    const inpH=document.createElement('input'); inpH.type='number'; inpH.min='0'; inpH.step='0.25'; inpH.value=mpp.horas||0;
+    inpH.addEventListener('change',()=>{ const v=nonneg(inpH.value); mpp.horas=v; save(); renderResumen(); renderCardIfSame(p.id); });
+    inpH.disabled = !(p.pr || mpp.pa || p.mis);
+    tdH.appendChild(inpH); tr.appendChild(tdH);
+
+    const tdE=document.createElement('td');
+    const inpE=document.createElement('input'); inpE.type='number'; inpE.min='0'; inpE.step='1'; inpE.value=mpp.est||0;
+    inpE.addEventListener('change',()=>{ const v=nonneg(inpE.value); mpp.est=v; save(); renderResumen(); renderCardIfSame(p.id); });
+    tdE.appendChild(inpE); tr.appendChild(tdE);
+
+    const tdNota=document.createElement('td');
+    const ta=document.createElement('textarea'); ta.value=mpp.nota||''; ta.placeholder='Notas…';
+    ta.addEventListener('change',()=>{ mpp.nota = (ta.value||''); save(); renderCardIfSame(p.id); });
+    tdNota.appendChild(ta); tr.appendChild(tdNota);
+
+    tb.appendChild(tr);
+  }
+}
+
+// ===== Grupos =====
+let GVIEW=1;
+$('#grpTabs').addEventListener('click',(e)=>{ if(e.target.matches('button[data-g]')){ GVIEW=+e.target.dataset.g; renderGrupo(); }});
+function renderGrupo(){
+  const ps=state.personas.filter(p=>p.grupo==GVIEW).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+  const tb=$('#tblGrupo tbody'); tb.innerHTML='';
+  let cPR=0, cPA=0;
+  for(const p of ps){
+    const mpp=mp(Y,M,p.id);
+    if(p.pr) cPR++; if(mpp.pa) cPA++;
+    const tr=document.createElement('tr');
+    const td1=document.createElement('td'); td1.textContent=p.nombre; tr.appendChild(td1);
+    const td2=document.createElement('td'); td2.textContent=p.pr?'PR':'PUB'; tr.appendChild(td2);
+    const td3=document.createElement('td'); td3.textContent=mpp.pa?'Sí':'No'; tr.appendChild(td3);
+    tb.appendChild(tr);
+  }
+  $('#gCount').textContent=ps.length; $('#gPR').textContent=cPR; $('#gPA').textContent=cPA;
+}
+
+// ===== Asistencia =====
+function bindAsist(){
+  for(let i of [1,2,3,4,5,6]){
+    $('#es'+i).addEventListener('change',()=>{ const mon=getMonth(Y,M); mon.es[i-1]=nonneg($('#es'+i).value); save(); renderAsist(); renderResumen(); renderS88(); });
+    $('#fs'+i).addEventListener('change',()=>{ const mon=getMonth(Y,M); mon.fs[i-1]=nonneg($('#fs'+i).value); save(); renderAsist(); renderResumen(); renderS88(); });
+  }
+}
+function renderAsist(){
+  const mon=getMonth(Y,M);
+  for(let i=1;i<=6;i++){ $('#es'+i).value=mon.es[i-1]||0; $('#fs'+i).value=mon.fs[i-1]||0; }
+  const sES=mon.es.reduce((a,b)=>a+nonneg(b),0), cES=mon.es.filter(v=>nonneg(v)>0).length;
+  const sFS=mon.fs.reduce((a,b)=>a+nonneg(b),0), cFS=mon.fs.filter(v=>nonneg(v)>0).length;
+  $('#esTot').textContent=sES; $('#esProm').textContent=(cES? sES/cES:0).toFixed(1);
+  $('#fsTot').textContent=sFS; $('#fsProm').textContent=(cFS? sFS/cFS:0).toFixed(1);
+}
+
+// ===== Reglas de 6 meses =====
+function lastMonths(y,m,count=6){ const out=[]; let Yt=y, Mt=m; for(let i=0;i<count;i++){ out.push(ymKey(Yt,Mt)); Mt--; if(Mt===0){ Mt=12; Yt--; } } return out; }
+function reportedInMonth(pid, ym){
+  const mon=state.meses[ym]; if(!mon) return false;
+  const r=mon.per[pid]; if(!r) return false;
+  const per=state.personas.find(x=>x.id===pid); if(!per) return false;
+  if(per.pr || r.pa || per.mis) return nonneg(r.horas)>0;
+  return !!r.predico;
+}
+function classify(pid){
+  const per=state.personas.find(x=>x.id===pid); if(!per) return 'activo';
+  if(per.override) return per.override;
+  const base = per.overrideSince || per.createdYM || ymKey(Y,M);
+  const yms=lastMonths(Y,M,6).filter(ym => ymCompare(ym, base)>=0);
+  if(yms.length < 6) return 'activo'; // aún no hay 6 meses para evaluar
+  let any=false, any0=false;
+  for(const k of yms){ const rep=reportedInMonth(pid,k); if(rep) any=true; else any0=true; }
+  if(any && any0) return 'irregular';
+  if(!any) return 'inactivo';
+  return 'activo';
+}
+
+// ===== Resumen mensual =====
+function renderResumen(){
+  const mon=getMonth(Y,M);
+  let pubInf=0, pubEst=0;
+  let paInf=0, paHor=0, paEst=0;
+  let prInf=0, prHor=0, prEst=0;
+
+  let activosMes=0, irreg=0, inact=0;
+
+  for(const p of state.personas){
+    const r=mp(Y,M,p.id);
+    const st=classify(p.id);
+    if(st==='irregular') irreg++; else if(st==='inactivo') inact++;
+
+    // Publicadores activos (PR + PA + PUB predicó), sólo si el estado actual es ACTIVO
+    if(st==='activo'){
+      if(p.pr) activosMes++;
+      else if(r.pa) activosMes++;
+      else if(r.predico) activosMes++;
+    }
+
+    // Desglose por rol:
+    if(p.pr){
+      if(nonneg(r.horas)>0) prInf++;
+      prHor += nonneg(r.horas); prEst += nonneg(r.est);
+    }else if(r.pa){
+      if(nonneg(r.horas)>0) paInf++;
+      paHor += nonneg(r.horas); paEst += nonneg(r.est);
+    }else{
+      if(r.predico) pubInf++;
+      pubEst += nonneg(r.est);
+    }
+  }
+
+  $('#rmPubAct').textContent=activosMes;
+  $('#rmIrreg').textContent=irreg;
+  $('#rmInact').textContent=inact;
+  $('#rmTotalN').textContent=state.personas.length;
+
+  $('#rmPubInf').textContent=pubInf;
+  $('#rmPubEst').textContent=pubEst;
+  $('#rmPAInf').textContent=paInf;
+  $('#rmPAHor').textContent=paHor;
+  $('#rmPAEst').textContent=paEst;
+  $('#rmPRInf').textContent=prInf;
+  $('#rmPRHor').textContent=prHor;
+  $('#rmPREst').textContent=prEst;
+
+  const sES=mon.es.reduce((a,b)=>a+nonneg(b),0), cES=mon.es.filter(v=>nonneg(v)>0).length;
+  const sFS=mon.fs.reduce((a,b)=>a+nonneg(b),0), cFS=mon.fs.filter(v=>nonneg(v)>0).length;
+  $('#rmEsTot').textContent=sES; $('#rmEsProm').textContent=(cES? sES/cES:0).toFixed(1);
+  $('#rmFsTot').textContent=sFS; $('#rmFsProm').textContent=(cFS? sFS/cFS:0).toFixed(1);
+
+  let countPR=0,countPA=0,countPUB=0;
+  for(const p of state.personas){ const r=mp(Y,M,p.id); if(p.pr) countPR++; else if(r.pa) countPA++; else if(r.predico) countPUB++; }
+  $('#rmCongTot').textContent=countPR+countPA+countPUB;
+}
+
+
+// ===== Resumen anual =====
+function renderAnual(){
+  const syEl = document.querySelector('#anSY');
+  const sy = parseInt(syEl && syEl.value ? syEl.value : serviceYearStartFrom(Y,M));
+  const lab = document.querySelector('#anSYLabel');
+  if(lab){ lab.textContent = `Septiembre ${sy} – Agosto ${sy+1}`; }
+
+  let PRH=0, PRE=0, PAH=0, PAE=0, PUBE=0, PUBI=0, CONG=0, FST=0, FSC=0, EST=0, ESC=0;
+
+  const months = monthMapForServiceYear(sy);
+  for(const {y,m} of months){
+    const k=ymKey(y,m), mon=state.meses[k];
+    if(!mon) continue;
+
+    let monthlyTotal=0;
+
+    for(const p of state.personas){
+      const r=(mon.per||{})[p.id] || {pa:false,predico:false,horas:0,est:0,nota:''};
+      if(p.pr){
+        PRH += nonneg(r.horas);
+        PRE += nonneg(r.est);
+        monthlyTotal += 1;
+      }else if(r.pa){
+        PAH += nonneg(r.horas);
+        PAE += nonneg(r.est);
+        monthlyTotal += 1;
+      }else{
+        if(r.predico) { PUBI += 1; monthlyTotal += 1; }
+        PUBE += nonneg(r.est);
+      }
+    }
+
+    CONG += monthlyTotal;
+
+    const sFS=(mon.fs||[]).reduce((a,b)=>a+nonneg(b),0), cFS=(mon.fs||[]).filter(v=>nonneg(v)>0).length;
+    const sES=(mon.es||[]).reduce((a,b)=>a+nonneg(b),0), cES=(mon.es||[]).filter(v=>nonneg(v)>0).length;
+    FST+=sFS; FSC+=cFS; EST+=sES; ESC+=cES;
+  }
+
+  let IRR=0;
+  for(const p of state.personas){ if(classify(p.id)==='irregular') IRR++; }
+
+  $('#raPRH').textContent=PRH;
+  $('#raPRE').textContent=PRE;
+  $('#raPAH').textContent=PAH;
+  $('#raPAE').textContent=PAE;
+  $('#raPUBE').textContent=PUBE;
+  $('#raPUBI').textContent=PUBI;
+  $('#raIRR').textContent=IRR;
+  $('#raCONG').textContent=CONG;
+  $('#raFST').textContent=FST; $('#raFSP').textContent=(FSC?FST/FSC:0).toFixed(1);
+  $('#raEST').textContent=EST; $('#raESP').textContent=(ESC?EST/ESC:0).toFixed(1);
+}
+
+document.addEventListener('change', (e)=>{
+  if(e.target && e.target.id==='anSY'){ renderAnual(); }
+});
+// ===== Imprimir Resumen =====
+$('#btnImprimir').addEventListener('click',()=>{ $$('.tabs button').forEach(b=>b.classList.remove('active')); document.querySelector('[data-tab="resumen"]').classList.add('active'); $$('.tab').forEach(t=>t.classList.remove('active')); $('#resumen').classList.add('active'); setTimeout(()=>window.print(),50); });
+
+// ===== Drive (Apps Script) =====
+function buildUrl(base, params){
+  try{ const u=new URL(base); Object.entries(params).forEach(([k,v])=>{ if(v!==undefined&&v!==null&&v!=='') u.searchParams.set(k,v); }); return u.toString(); }
+  catch{ const qs=Object.entries(params).filter(([,v])=>v!==undefined&&v!==null&&v!=='').map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&'); return base+(base.includes('?')?'&':'?')+qs; }
+}
+function setSyncMsg(t){ $('#syncMsg').textContent=t||''; }
+$('#syncUrl').value=localStorage.getItem(SYNC_URL)||'';
+$('#syncToken').value=localStorage.getItem(SYNC_TOKEN)||'';
+$('#syncEnabled').checked=(localStorage.getItem(SYNC_EN)==='1');
+$('#syncUrl').addEventListener('change',()=> localStorage.setItem(SYNC_URL,$('#syncUrl').value.trim()));
+$('#syncToken').addEventListener('change',()=> localStorage.setItem(SYNC_TOKEN,$('#syncToken').value.trim()));
+$('#syncEnabled').addEventListener('change',()=>{
+  if(!isAdmin()){ $('#syncEnabled').checked=!$('#syncEnabled').checked; return alert('Solo admin.'); }
+  localStorage.setItem(SYNC_EN,$('#syncEnabled').checked?'1':'0');
+  if($('#syncEnabled').checked) doSync(true);
+});
+$('#btnSyncNow').addEventListener('click',()=>{ if(!isAdmin()) return alert('Solo admin.'); doSync(true); });
+$('#btnOpenMonth').addEventListener('click',()=>{
+  const url=(localStorage.getItem(SYNC_URL)||'').trim();
+  const tok=(localStorage.getItem(SYNC_TOKEN)||'').trim();
+  if(!url||!tok) return alert('Configura URL y token.');
+  const ym = ymKey(Y,M);
+  window.open(buildUrl(url,{token:tok,month:ym}),'_blank');
+});
+$('#btnTestSync').addEventListener('click',()=>{
+  const url=(localStorage.getItem(SYNC_URL)||'').trim();
+  const tok=(localStorage.getItem(SYNC_TOKEN)||'').trim();
+  if(!url||!tok) return alert('Configura URL y token.');
+  const test=buildUrl(url,{token:tok,month:ymKey(Y,M),list:'1'});
+  setSyncMsg('Probando conexión…');
+  fetch(test).then(r=>{ if(!r.ok) throw 0; return r.json(); })
+    .then(arr=> setSyncMsg('Conexión OK: '+(Array.isArray(arr)?arr.length:0)+' copias.'))
+    .catch(()=>{ setSyncMsg('No se pudo leer (CORS). Abriendo pestaña…'); window.open(test,'_blank'); });
+});
+document.getElementById('btnRestoreMonth').addEventListener('click',()=>{
+  if(!isAdmin()) return alert('Solo admin.');
+  const url=(localStorage.getItem(SYNC_URL)||'').trim();
+  const tok=(localStorage.getItem(SYNC_TOKEN)||'').trim();
+  if(!url||!tok) return alert('Configura URL y token.');
+  const ym = ymKey(Y,M);
+  const u = buildUrl(url,{token:tok,month:ym});
+  setSyncMsg('Restaurando mes '+ym+'…');
+  fetch(u).then(r=>{ if(!r.ok) throw 0; return r.json(); })
+    .then(obj=>{
+      if(!obj || typeof obj!=='object' || !obj.meses){ throw 0; }
+      state=obj; save(); renderAll(); setSyncMsg('Restaurado: '+ym);
+    })
+    .catch(()=> setSyncMsg('No se pudo restaurar (revisa token / permisos / mes).'));
+});
+document.getElementById('btnRestoreLatest').addEventListener('click',()=>{
+  if(!isAdmin()) return alert('Solo admin.');
+  
+// Restaurar desde copia .json (local)
+const fileRestoreEl = document.getElementById('fileRestoreJSON');
+const btnRestoreJSON = document.getElementById('btnRestoreJSON');
+if(btnRestoreJSON && fileRestoreEl){
+  btnRestoreJSON.addEventListener('click',()=> fileRestoreEl.click());
+  fileRestoreEl.addEventListener('change', (e)=>{
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const obj = JSON.parse(reader.result);
+        if(!obj || typeof obj!=='object' || !obj.meses || !Array.isArray(obj.personas)) throw 0;
+        const migrated = migrate(obj);
+        state = migrated; save(); renderAll();
+        setSyncMsg('Restaurado desde copia .json local.');
+        alert('Restaurado correctamente desde el archivo JSON.');
+      }catch{
+        alert('Archivo inválido. Debe ser una copia .json exportada desde esta app.');
+      }
+    };
+    reader.readAsText(f);
+    e.target.value='';
+  });
+}
+const url=(localStorage.getItem(SYNC_URL)||'').trim();
+  const tok=(localStorage.getItem(SYNC_TOKEN)||'').trim();
+  if(!url||!tok) return alert('Configura URL y token.');
+  const u = buildUrl(url,{token:tok});
+  setSyncMsg('Restaurando último respaldo…');
+  fetch(u).then(r=>{ if(!r.ok) throw 0; return r.json(); })
+    .then(obj=>{
+      if(!obj || typeof obj!=='object' || !obj.meses){ throw 0; }
+      state=obj; save(); renderAll(); setSyncMsg('Restaurado último respaldo.');
+    })
+    .catch(()=> setSyncMsg('No se pudo restaurar (revisa token / permisos).'));
+});
+let syncTimer=null;
+function debounceSync(){ if(localStorage.getItem(SYNC_EN)!=='1') return; if(syncTimer) clearTimeout(syncTimer); syncTimer=setTimeout(()=>doSync(false),800); }
+function doSync(show){
+  const url=(localStorage.getItem(SYNC_URL)||'').trim();
+  const tok=(localStorage.getItem(SYNC_TOKEN)||'').trim();
+  if(!url||!tok){ if(show) setSyncMsg('Configura URL y token.'); return; }
+  setSyncMsg('Guardando en Drive…');
+  const payload={state,savedAt:new Date().toISOString(),version:1,snapshotYM:ymKey(Y,M)};
+  const full=buildUrl(url,{token:tok});
+  fetch(full,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(()=>setSyncMsg('Copia guardada.'))
+    .catch(()=>{
+      return fetch(full,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload),mode:'no-cors'})
+        .then(()=>setSyncMsg('Copia enviada (no-cors).'))
+        .catch(()=>setSyncMsg('No se pudo guardar.'));
+    });
+}
+
+// ======== TARJETA ========
+function fillNames(){
+  const dl=$('#namesList'); dl.innerHTML='';
+  state.personas.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}))
+    .forEach(p=>{ const o=document.createElement('option'); o.value=p.nombre; dl.appendChild(o); });
+}
+function findByName(name){
+  const n=(name||'').trim().toLowerCase();
+  return state.personas.find(p=>p.nombre.trim().toLowerCase()===n) || null;
+}
+function serviceYearStartFrom(Y,M){ return (M>=9)?Y:(Y-1); } // sept inicia
+$('#cardSY').value = serviceYearStartFrom(Y,M);
+function monthMapForServiceYear(sy){
+  const out=[], months=[9,10,11,12,1,2,3,4,5,6,7,8];
+  months.forEach(m=>{
+    const y = (m>=9)? sy : (sy+1);
+    const label = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][m-1];
+    out.push({label,y,m});
+  });
+  return out;
+}
+function partMark(p, r){
+  if(p.pr || r.pa || p.mis) return nonneg(r.horas)>0 ? '✔' : '';
+  return r.predico ? '✔' : '';
+}
+function buildCardHTML(p, sy){
+  const rows = monthMapForServiceYear(sy).map(({label,y,m})=>{
+    const r = (state.meses[ymKey(y,m)]?.per?.[p.id]) || {pa:false,predico:false,horas:0,est:0,nota:''};
+    return {
+      mes: label,
+      part: partMark(p,r),
+      est: nonneg(r.est) || '',
+      pa: r.pa ? '✔' : '',
+      horas: (p.pr || r.pa || p.mis) ? (nonneg(r.horas)||'') : '',
+      nota: r.nota || ''
+    };
+  });
+  const totEst = rows.reduce((a,x)=>a+Number(x.est||0),0);
+  const totHor = rows.reduce((a,x)=>a+Number(x.horas||0),0);
+  const estado = classify(p.id);
+  const privilegios = [];
+  if(p.anciano) privilegios.push('Anciano');
+  if(p.sm) privilegios.push('Siervo ministerial');
+  if(p.pr) privilegios.push('Precursor regular');
+  if(p.pe) privilegios.push('Precursor especial');
+  if(p.mis) privilegios.push('Misionero');
+
+  return `
+  <div class="card-persona">
+    <div class="s21-head">
+      <div>
+        <div class="s21-title">Registro de publicador de la congregación (S-21-S)</div>
+        <div class="s21-sub">Año de servicio: <b>${sy}</b>–<b>${String(sy+1).slice(-2)}</b> (septiembre → agosto)</div>
+      </div>
+      <div class="s21-sub" style="text-align:right">
+        Fecha de impresión: ${new Date().toLocaleDateString()}
+      </div>
+    </div>
+
+    <div class="s21-fieldrow">
+      <div class="s21-f"><label>Nombre</label><span><b>${p.nombre}</b></span></div>
+      <div class="s21-f"><label>Nacimiento</label><span>${p.nac||'—'}</span></div>
+      <div class="s21-f"><label>Bautismo</label><span>${p.bau||'—'}</span></div>
+      <div class="s21-f"><label>Sexo</label><span>${p.sexo||'—'}</span></div>
+    </div>
+    <div class="s21-fieldrow" style="grid-template-columns:1.2fr 1.2fr 2fr 1fr;">
+      <div class="s21-f"><label>Esperanza</label><span>${p.esperanza||'—'}</span></div>
+      <div class="s21-f"><label>Estado</label><span>${estado}</span></div>
+      <div class="s21-f"><label>Privilegios</label>
+        <span class="s21-badges">${(privilegios.length? privilegios.map(t=>`<span class="s21-badge">${t}</span>`).join(' ') : '—')}</span>
+      </div>
+      <div class="s21-f"><label>Grupo</label><span>${p.grupo}</span></div>
+    </div>
+
+    <table class="s21">
+      <thead>
+        <tr>
+          <th>Mes</th>
+          <th>Participación<br>en el ministerio</th>
+          <th>Cursos<br>bíblicos</th>
+          <th>Precursor<br>auxiliar</th>
+          <th>Horas<br>(si aplica)</th>
+          <th>Notas</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r=>`
+          <tr>
+            <td>${r.mes}</td>
+            <td style="text-align:center">${r.part}</td>
+            <td style="text-align:right">${r.est||''}</td>
+            <td style="text-align:center">${r.pa||''}</td>
+            <td style="text-align:right">${r.horas||''}</td>
+            <td>${r.nota||''}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td><b>Total</b></td>
+          <td></td>
+          <td style="text-align:right"><b>${totEst}</b></td>
+          <td></td>
+          <td style="text-align:right"><b>${totHor}</b></td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="s21-foot">
+      <div class="line">Firma del secretario</div>
+      <div class="line">Fecha</div>
+    </div>
+  </div>
+  `;
+}
+function renderCard(pid, sy){
+  const p = state.personas.find(x=>x.id===pid); 
+  if(!p){ $('#cardPanel').innerHTML='<p class="small">Persona no encontrada.</p>'; return; }
+  $('#cardPanel').innerHTML = buildCardHTML(p, sy);
+}
+function renderCardIfSame(pid){
+  const nameSel = ($('#cardName').value||'').trim();
+  const p = findByName(nameSel);
+  if(p && p.id===pid){
+    const sy = parseInt($('#cardSY').value)||serviceYearStartFrom(Y,M);
+    renderCard(pid, sy);
+  }
+}
+$('#btnVerTarjeta').addEventListener('click',()=>{
+  const name=($('#cardName').value||'').trim(); if(!name) return alert('Escribe un nombre.');
+  const p=findByName(name); if(!p) return alert('No se encontró esa persona.');
+  const sy=parseInt($('#cardSY').value)||serviceYearStartFrom(Y,M);
+  renderCard(p.id, sy);
+});
+$('#btnPrintCard').addEventListener('click',()=>{
+  const w=window.open('','_blank','width=1024,height=700');
+  const html = `
+    <html><head><title>Tarjeta</title>
+    <meta charset="utf-8">
+    <style>
+      @page{size:A4;margin:12mm}
+      body{font-family:system-ui,-apple-system,Segoe UI,Roboto;color:#111;background:#fff}
+      .card-persona{max-width:190mm;margin:0 auto;background:#fff;color:#111;border:0;padding:0}
+      .s21-head{display:grid;grid-template-columns:2fr 1fr;gap:10px;align-items:center;border-bottom:2px solid #222;padding-bottom:8px;margin-bottom:8px}
+      .s21-title{font-size:18px;font-weight:800}
+      .s21-sub{font-size:12px;color:#333}
+      .s21-fieldrow{display:grid;grid-template-columns:1.6fr 1.2fr 1.2fr 1fr;gap:10px;margin:6px 0 10px}
+      .s21-f{border:1px solid #999;border-radius:6px;padding:6px 8px;min-height:34px;font-size:13px;display:flex;gap:6px;align-items:center;justify-content:space-between}
+      .s21-f label{font-weight:600;color:#333;font-size:12px}
+      .s21-badges{display:flex;gap:6px;flex-wrap:wrap}
+      .s21-badge{display:inline-block;padding:2px 8px;border:1px solid #777;border-radius:999px;font-size:11px;background:#f6f6f8}
+      table{width:100%;border-collapse:collapse;margin-top:6px}
+      th,td{border:1px solid #333;padding:6px 6px;font-size:12.5px}
+      th{background:#f1f2f6;text-align:center}
+      .s21-foot{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:12px;color:#333}
+      .s21-foot .line{min-width:220px;border-top:1px solid #555;padding-top:3px;text-align:center}
+    </style>
+    </head><body>${document.querySelector('#cardPanel').outerHTML}</body></html>`;
+  w.document.write(html); w.document.close(); w.focus(); w.print();
+});
+
+// ---- PDF: tarjeta individual ----
+document.getElementById('btnPdfCard').addEventListener('click',()=>{
+  const name=($('#cardName').value||'').trim(); if(!name) return alert('Escribe un nombre y pulsa “Ver tarjeta” primero.');
+  const p=findByName(name); if(!p) return alert('No se encontró esa persona.');
+  const sy=parseInt($('#cardSY').value)||serviceYearStartFrom(Y,M);
+  const el = document.createElement('div');
+  el.innerHTML = buildCardHTML(p, sy);
+  const opt = { margin:10, filename:`Tarjeta_${p.nombre.replace(/\s+/g,'_')}_${sy}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas: { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' }, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} };
+  html2pdf().from(el).set(opt).save();
+});
+
+// ---- PDF: grupo / todas ----
+document.getElementById('btnPdfGrupo').addEventListener('click', ()=> downloadBatch('grupo'));
+document.getElementById('btnPdfTodas').addEventListener('click', ()=> downloadBatch('todas'));
+
+async function downloadBatch(mode){
+  try{
+    const sy = parseInt($('#cardSY').value) || serviceYearStartFrom(Y, M);
+
+    // 1) Conjunto de personas
+    let persons = [];
+    if (mode === 'grupo') {
+      const g = +($('#pdfGrupoSel').value || 1);
+      persons = state.personas.filter(p => p.grupo == g);
+      if (persons.length === 0) { alert('Ese grupo no tiene personas.'); return; }
+    } else {
+      persons = state.personas.slice();
+      if (persons.length === 0) { alert('No hay personas cargadas.'); return; }
+    }
+    persons.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+
+    // 2) Preparamos contenedor (fuera de la vista pero renderizable)
+    const batch = document.getElementById('pdf-batch');
+    batch.innerHTML = '';
+    batch.style.position = 'fixed';
+    batch.style.left = '-9999px';
+    batch.style.top = '0';
+    batch.style.width = '210mm';
+    batch.style.background = '#fff';
+    batch.style.color = '#111';
+
+    // 3) Montamos todas las tarjetas
+    persons.forEach((p, i) => {
+      const wrapper = document.createElement('div'); wrapper.className='pdf-page';
+      wrapper.innerHTML = buildCardHTML(p, sy);
+      batch.appendChild(wrapper);
+      if (i < persons.length - 1) {
+        const br = document.createElement('div');
+        br.className = 'page-break';
+        batch.appendChild(br);
+      }
+    });
+
+    // 4) Espera a que el DOM y las fuentes estén listos
+    await new Promise(r => requestAnimationFrame(()=>requestAnimationFrame(r)));
+    if (document.fonts && document.fonts.ready) {
+      try { await document.fonts.ready; } catch(e) {}
+    }
+
+    // 5) Generar el PDF
+    const file = (mode === 'grupo')
+      ? `Tarjetas_Grupo_${($('#pdfGrupoSel').value)}_${sy}.pdf`
+      : `Tarjetas_Todas_${sy}.pdf`;
+
+    const opt = {
+      margin: 10,
+      filename: file,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'], before: '.page-break' }
+    };
+
+    await html2pdf().set(opt).from(batch).save();
+
+    // 6) Limpieza
+    batch.innerHTML = '';
+  }catch(err){
+    console.error('Error generando PDF:', err);
+    // ===== Plan B: abrir en nueva ventana e imprimir =====
+    try{
+      const sy = parseInt($('#cardSY').value) || serviceYearStartFrom(Y, M);
+      let persons = (mode==='grupo')
+        ? state.personas.filter(p => p.grupo == +($('#pdfGrupoSel').value || 1))
+        : state.personas.slice();
+      persons.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+
+      if (persons.length === 0) {
+        alert(mode==='grupo' ? 'Ese grupo no tiene personas.' : 'No hay personas cargadas.');
+        return;
+      }
+
+      let htmlCards = persons.map(p => buildCardHTML(p, sy)).join('<div class="page-break"></div>');
+
+      const w=window.open('','_blank','width=1024,height=700');
+      const html = `
+      <html><head><title>${mode==='grupo'?'Tarjetas del grupo':'Todas las tarjetas'}</title>
+      <meta charset="utf-8">
+      <style>
+        @page{size:A4;margin:12mm}
+        body{font-family:system-ui,-apple-system,Segoe UI,Roboto;color:#111;background:#fff}
+        .page-break{page-break-after:always}
+        .card-persona{max-width:190mm;margin:0 auto;background:#fff;color:#111;border:0;padding:0}
+        .s21-head{display:grid;grid-template-columns:2fr 1fr;gap:10px;align-items:center;border-bottom:2px solid #222;padding-bottom:8px;margin-bottom:8px}
+        .s21-title{font-size:18px;font-weight:800}
+        .s21-sub{font-size:12px;color:#333}
+        .s21-fieldrow{display:grid;grid-template-columns:1.6fr 1.2fr 1.2fr 1fr;gap:10px;margin:6px 0 10px}
+        .s21-f{border:1px solid #999;border-radius:6px;padding:6px 8px;min-height:34px;font-size:13px;display:flex;gap:6px;align-items:center;justify-content:space-between}
+        .s21-f label{font-weight:600;color:#333;font-size:12px}
+        .s21-badges{display:flex;gap:6px;flex-wrap:wrap}
+        .s21-badge{display:inline-block;padding:2px 8px;border:1px solid #777;border-radius:999px;font-size:11px;background:#f6f6f8}
+        table{width:100%;border-collapse:collapse;margin-top:6px}
+        th,td{border:1px solid #333;padding:6px 6px;font-size:12.5px}
+        th{background:#f1f2f6;text-align:center}
+        .s21-foot{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:12px;color:#333}
+        .s21-foot .line{min-width:220px;border-top:1px solid #555;padding-top:3px;text-align:center}
+      </style>
+      </head><body style="background:#fff;color:#111">${htmlCards}</body></html>`;
+      w.document.write(html); w.document.close(); w.focus(); w.print();
+      alert('Se abrió la vista de impresión como plan B. Elige “Guardar como PDF”.');
+    }catch(e2){
+      alert('No se pudo generar el PDF. Revisa si el navegador bloquea descargas emergentes.');
+    }
+  }
+}
+
+
+// ---- PRINT: grupo / todas ----
+document.getElementById('btnPrintGrupo').addEventListener('click', ()=> printBatch('grupo'));
+document.getElementById('btnPrintTodas').addEventListener('click', ()=> printBatch('todas'));
+
+function printBatch(mode){
+  const sy = parseInt($('#cardSY').value) || serviceYearStartFrom(Y, M);
+  let persons = (mode==='grupo')
+    ? state.personas.filter(p => p.grupo == +($('#pdfGrupoSel').value || 1))
+    : state.personas.slice();
+  persons.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+
+  if (persons.length === 0) {
+    alert(mode==='grupo' ? 'Ese grupo no tiene personas.' : 'No hay personas cargadas.');
+    return;
+  }
+
+  const htmlCards = persons.map(p => buildCardHTML(p, sy)).join('<div class="page-break"></div>');
+  const title = (mode==='grupo') ? 'Tarjetas del grupo' : 'Todas las tarjetas';
+
+  const w=window.open('','_blank','width=1024,height=700');
+  const htmlDoc = `
+  <html><head><title>${title}</title>
+  <meta charset="utf-8">
+  <style>
+    @page{size:A4;margin:12mm}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto;color:#111;background:#fff}
+    .page-break{page-break-after:always}
+    .card-persona{max-width:190mm;margin:0 auto;background:#fff;color:#111;border:0;padding:0}
+    .s21-head{display:grid;grid-template-columns:2fr 1fr;gap:10px;align-items:center;border-bottom:2px solid #222;padding-bottom:8px;margin-bottom:8px}
+    .s21-title{font-size:18px;font-weight:800}
+    .s21-sub{font-size:12px;color:#333}
+    .s21-fieldrow{display:grid;grid-template-columns:1.6fr 1.2fr 1.2fr 1fr;gap:10px;margin:6px 0 10px}
+    .s21-f{border:1px solid #999;border-radius:6px;padding:6px 8px;min-height:34px;font-size:13px;display:flex;gap:6px;align-items:center;justify-content:space-between}
+    .s21-f label{font-weight:600;color:#333;font-size:12px}
+    .s21-badges{display:flex;gap:6px;flex-wrap:wrap}
+    .s21-badge{display:inline-block;padding:2px 8px;border:1px solid #777;border-radius:999px;font-size:11px;background:#f6f6f8}
+    table{width:100%;border-collapse:collapse;margin-top:6px}
+    th,td{border:1px solid #333;padding:6px 6px;font-size:12.5px}
+    th{background:#f1f2f6;text-align:center}
+    .s21-foot{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:12px;color:#333}
+    .s21-foot .line{min-width:220px;border-top:1px solid #555;padding-top:3px;text-align:center}
+  </style>
+  </head><body style="background:#fff;color:#111">${htmlCards}</body></html>`;
+  w.document.write(htmlDoc); w.document.close(); w.focus(); w.print();
+}
+
+// ===== S-88-S (asistencias) =====
+function s88MonthStats(y, m){
+  const mon = state.meses[ymKey(y,m)] || {es:[0,0,0,0,0,0], fs:[0,0,0,0,0,0]};
+  const es = (mon.es||[]).map(v=>nonneg(v));
+  const fs = (mon.fs||[]).map(v=>nonneg(v));
+  const esCnt = es.filter(v=>v>0).length;
+  const fsCnt = fs.filter(v=>v>0).length;
+  const esTot = es.reduce((a,b)=>a+b,0);
+  const fsTot = fs.reduce((a,b)=>a+b,0);
+  return { esCnt, esTot, esAvg: esCnt? (esTot/esCnt):0, fsCnt, fsTot, fsAvg: fsCnt? (fsTot/fsCnt):0 };
+}
+function fmt1(x){ return (Math.round(x*10)/10).toFixed(1); }
+
+function renderS88(){
+  const sy = parseInt($('#s88SY').value)||serviceYearStartFrom(Y,M);
+  $('#s88SY').value = sy;
+  $('#s88syLbl').textContent = `Año de servicio: ${sy}–${String(sy+1).slice(-2)}`;
+  $('#s88genDate').textContent = new Date().toLocaleDateString();
+
+  const months = monthMapForServiceYear(sy); // sep→ago
+
+  // Entre semana
+  const tbES = $('#tblS88ES tbody'); tbES.innerHTML='';
+  let ES_cnt=0, ES_tot=0;
+  months.forEach(({label,y,m})=>{
+    const st = s88MonthStats(y,m);
+    ES_cnt += st.esCnt; ES_tot += st.esTot;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${label}</td>
+      <td style="text-align:right">${st.esCnt}</td>
+      <td style="text-align:right">${st.esTot}</td>
+      <td style="text-align:right">${st.esCnt? fmt1(st.esAvg): '0.0'}</td>`;
+    tbES.appendChild(tr);
+  });
+  $('#s88ES_cnt').textContent = ES_cnt;
+  $('#s88ES_tot').textContent = ES_tot;
+  $('#s88ES_avg').textContent = ES_cnt? fmt1(ES_tot/ES_cnt) : '0.0';
+
+  // Fin de semana
+  const tbFS = $('#tblS88FS tbody'); tbFS.innerHTML='';
+  let FS_cnt=0, FS_tot=0;
+  months.forEach(({label,y,m})=>{
+    const st = s88MonthStats(y,m);
+    FS_cnt += st.fsCnt; FS_tot += st.fsTot;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${label}</td>
+      <td style="text-align:right">${st.fsCnt}</td>
+      <td style="text-align:right">${st.fsTot}</td>
+      <td style="text-align:right">${st.fsCnt? fmt1(st.fsAvg): '0.0'}</td>`;
+    tbFS.appendChild(tr);
+  });
+  $('#s88FS_cnt').textContent = FS_cnt;
+  $('#s88FS_tot').textContent = FS_tot;
+  $('#s88FS_avg').textContent = FS_cnt? fmt1(FS_tot/FS_cnt) : '0.0';
+}
+
+// DESCARGA ROBUSTA S-88-S: descarga directa + plan B (nueva pestaña) + plan C (print)
+document.getElementById('btnS88pdf').addEventListener('click', async ()=>{
+  const sy = parseInt($('#s88SY').value)||serviceYearStartFrom(Y,M);
+  const el = document.querySelector('#s88panel');
+  el.style.background = '#fff'; el.style.color = '#111';
+  const filename = `S88_Asistencias_${sy}.pdf`;
+  const opt = {
+    margin: 10,
+    filename,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  try{
+    await html2pdf().from(el).set(opt).save();
+  }catch(e){
+    console.warn('Fallo save(); intentando plan B con blob URL', e);
+    try{
+      const worker = html2pdf().from(el).set({ ...opt, filename: undefined }).toPdf();
+      const pdf = await worker.get('pdf');
+      const blob = pdf.output('blob');
+      const url = URL.createObjectURL(blob);
+      // Abrir en nueva pestaña (lo que tú llamas “redireccionar”)
+      window.open(url, '_blank');
+      // Disparar descarga también:
+      const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 10000);
+    }catch(e2){
+      console.warn('Fallo plan B; intentando plan C (vista de impresión)', e2);
+      try{
+        const w=window.open('','_blank','width=1024,height=700');
+        const html = `
+        <html><head><title>${filename}</title>
+        <meta charset="utf-8">
+        <style>
+          @page{size:A4;margin:12mm}
+          body{font-family:system-ui,-apple-system,Segoe UI,Roboto;color:#111;background:#fff}
+          .table{width:100%;border-collapse:collapse}
+          .table th,.table td{border:1px solid #333;padding:6px 6px;font-size:12.5px}
+          .table th{text-align:center;background:#f1f2f6}
+        </style>
+        </head><body>${document.querySelector('#s88panel').outerHTML}</body></html>`;
+        w.document.write(html); w.document.close(); w.focus(); w.print();
+        alert('Se abrió la vista de impresión. Elige “Guardar como PDF”.');
+      }catch(e3){
+        alert('No se pudo generar el PDF. Verifica permisos de ventanas emergentes/descargas.');
+      }
+    }
+  }
+});
+
+
+// ===== Listas PR / PA =====
+function renderPRList(){
+  const tb = document.querySelector('#tblPR tbody');
+  if(!tb) return;
+  tb.innerHTML = '';
+  const ps = state.personas.filter(p=>p.pr).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+  for(const p of ps){
+    const tr = document.createElement('tr');
+    const privs = [];
+    if(p.anciano) privs.push('Anciano');
+    if(p.sm) privs.push('Siervo ministerial');
+    if(p.pe) privs.push('Precursor especial');
+    if(p.mis) privs.push('Misionero');
+    tr.innerHTML = `<td>${p.nombre}</td><td>${p.grupo}</td><td>${privs.join(', ')||'—'}</td>`;
+    tb.appendChild(tr);
+  }
+}
+
+function monthNamesPAForSY(pid, sy){
+  const months = monthMapForServiceYear(sy); // sep→ago con y,m
+  const labels = [];
+  months.forEach(({label,y,m})=>{
+    const r = (state.meses[ymKey(y,m)]?.per?.[pid]) || null;
+    if(r && r.pa) labels.push(label);
+  });
+  return labels;
+}
+function renderPAList(){
+  const tb = document.querySelector('#tblPA tbody');
+  if(!tb) return;
+  tb.innerHTML = '';
+  const sy = parseInt(document.querySelector('#paSY').value)||serviceYearStartFrom(Y,M);
+  const psNames = new Set();
+  // Recorremos todo el año de servicio y recogemos quienes tienen pa=true en al menos un mes
+  monthMapForServiceYear(sy).forEach(({y,m})=>{
+    const mon = state.meses[ymKey(y,m)];
+    if(!mon || !mon.per) return;
+    Object.entries(mon.per).forEach(([pid, r])=>{ if(r && r.pa) psNames.add(pid); });
+  });
+  const persons = state.personas.filter(p=>psNames.has(p.id)).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+  for(const p of persons){
+    const labels = monthNamesPAForSY(p.id, sy);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${p.nombre}</td><td>${p.grupo}</td><td>${labels.join(', ')||'—'}</td>`;
+    tb.appendChild(tr);
+  }
+}
+// Bind para paSY
+document.addEventListener('change', (e)=>{
+  if(e.target && e.target.id==='paSY'){ renderPAList(); }
+});
+
+// ===== Render principal =====
+function fillNamesList(){ const dl=$('#namesList'); dl.innerHTML=''; state.personas.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'})).forEach(p=>{ const o=document.createElement('option'); o.value=p.nombre; dl.appendChild(o); }); }
+function renderAll(){ renderPersonas(); $('#fGrupo').value=$('#fGrupo').value||'1'; renderEntradas(); renderGrupo(); renderAsist(); renderResumen(); renderAnual(); renderS88(); updateAdminUI(); fillNames(); fillNamesList(); 
+  ; // end prior renders
+  // Inicializar año de servicio en la pestaña PA
+  const paSYel = document.querySelector('#paSY');
+  if(paSYel && !paSYel.value){ paSYel.value = serviceYearStartFrom(Y,M); 
+  // Inicializar año de servicio en pestaña Anual
+  const anSYel = document.querySelector('#anSY');
+  if(anSYel && !anSYel.value){ anSYel.value = serviceYearStartFrom(Y,M); 
+  try{ refreshPersonDatalist(); }catch(e){}
+}
+  renderAnual();
+}
+  renderPRList();
+  renderPAList();
+}
+
+// Inicializaciones
+bindAsist();
+$('#s88SY').value = serviceYearStartFrom(Y,M);
+renderAll();
+})();
+</script>
+</body>
+</html>
