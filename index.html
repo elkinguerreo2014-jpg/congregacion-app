@@ -1,6 +1,99 @@
-<!doctype html>
-<html lang="es">
+<style id="theme-override">
+  /* Tema por defecto: BLANCO */
+  :root {
+    /* Paleta base (claro) */
+    --bg:#ffffff;
+    --fg:#111827;
+    --muted:#6b7280;
+
+    --card:#ffffff;
+    --surface:#f8fafc;
+    --table-header:#f1f5f9;
+
+    --border:#e5e7eb;
+    --accent:#0F62FE;
+    --accent-contrast:#ffffff;
+    --link:#0F62FE;
+
+    /* === Mapeos para el CSS viejo === */
+    --text: var(--fg);
+    --line: var(--border);
+    --input-bg:#ffffff;
+  }
+
+  /* Tema AZUL */
+  [data-theme="blue"]{
+    --bg:#0a2a6b;
+    --fg:#f8fafc;
+    --muted:#cbd5e1;
+
+    --card:#0f347d;
+    --surface:#0c2f77;
+    --table-header:rgba(255,255,255,.08);
+
+    --border:rgba(255,255,255,.28);
+    --accent:#60a5fa;
+    --accent-contrast:#0a172e;
+    --link:#93c5fd;
+
+    /* Mapeos para el CSS viejo */
+    --text: var(--fg);
+    --line: var(--border);
+    --input-bg:rgba(255,255,255,.12);
+
+    /* Hace que menús nativos (select) usen esquema oscuro con buen contraste */
+    color-scheme: dark;
+  }
+
+  /* Aplicación de la paleta a componentes “nuevos” y “viejos” */
+  body{background:var(--bg);color:var(--fg);}
+  header.top,.tabs{background:var(--surface);color:var(--fg);}
+  a{color:var(--link);}
+
+  .card,.print-area{background:var(--card);color:var(--fg);border-color:var(--border);}
+  .table{background:var(--card);color:var(--fg);border-color:var(--border);}
+  .table thead{background:var(--table-header);color:var(--fg);}
+  .table td,.table th{border-color:var(--border);}
+
+  input,select,textarea{background:var(--input-bg);color:var(--fg);border-color:var(--border);}
+  input::placeholder,textarea::placeholder{color:var(--muted);}
+
+  .btn{background:transparent;color:var(--fg);border:1px solid var(--border);}
+  .btn.primary,.btn:hover{background:var(--accent);color:var(--accent-contrast);border-color:var(--accent);}
+
+  .pill{background:var(--table-header);color:var(--fg);border:1px solid var(--border);}
+  .kpi,.small{color:var(--fg);}
+
+  /* Accesibilidad/contraste extra */
+  .table tbody tr:nth-child(odd){background:color-mix(in oklab, var(--card) 92%, var(--fg) 8%);}
+  .table tbody tr:hover{outline:2px solid var(--accent);}
+  .btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{
+    outline:3px solid var(--accent); outline-offset:2px;
+  }
+  /* Controles deshabilitados pero legibles */
+  .readonly :is(input,button,select,textarea){opacity:.72 !important}
+  /* Badges legibles en ambos temas */
+  .badge-role{border-color:var(--border);color:var(--fg);background:var(--table-header);}
+  .badge-pr{background:color-mix(in oklab, var(--accent) 25%, transparent);}
+  .badge-pa{background:color-mix(in oklab, #22c55e 25%, transparent);}
+  .badge-pub{background:color-mix(in oklab, #ef4444 25%, transparent);}
+
+  *{transition:background-color .20s ease,color .20s ease,border-color .20s ease;}
+</style>\n<!doctype html>
+<html lang="es" data-theme="dark">
 <head>
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem('theme');
+    if(!saved){
+      document.documentElement.setAttribute('data-theme','dark');
+      try{ localStorage.setItem('theme','dark'); }catch(e){}
+    }
+  }catch(e){}
+})();
+</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>congregacion_app</title>
@@ -108,6 +201,56 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
 @keyframes blinkHL { 50% { outline-color: transparent; } }
 
 </style>
+<style id="theme-override">
+  :root {
+    --bg: #ffffff;
+    --fg: #111827;
+    --muted: #6b7280;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --accent: #0F62FE;
+    --accent-contrast: #ffffff;
+    --surface: #f8fafc;
+    --table-header: #f1f5f9;
+    --input-bg: #ffffff;
+    --link: #0F62FE;
+  }
+  [data-theme="blue"] {
+    --bg: #0a2a6b;
+    --fg: #f8fafc;
+    --muted: #cbd5e1;
+    --card: #0f347d;
+    --border: rgba(255,255,255,0.18);
+    --accent: #60a5fa;
+    --accent-contrast: #0a172e;
+    --surface: #0c2f77;
+    --table-header: rgba(255,255,255,0.08);
+    --input-bg: rgba(255,255,255,0.1);
+    --link: #93c5fd;
+  }
+
+  body { background: var(--bg); color: var(--fg); }
+  header.top, .tabs { background: var(--surface); color: var(--fg); }
+  a { color: var(--link); }
+
+  .card, .print-area { background: var(--card); color: var(--fg); border-color: var(--border); }
+  .card.section-title { background: var(--surface); }
+  .table { background: var(--card); color: var(--fg); border-color: var(--border); }
+  .table thead { background: var(--table-header); color: var(--fg); }
+  .table td, .table th { border-color: var(--border); }
+
+  input, select, textarea { background: var(--input-bg); color: var(--fg); border-color: var(--border); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+
+  .btn { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+  .btn.primary, .btn:hover { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+  .pill { background: var(--table-header); color: var(--fg); border-color: var(--border); }
+
+  .kpi { color: var(--fg); }
+  .small { color: var(--muted); }
+
+  * { transition: background-color .20s ease, color .20s ease, border-color .20s ease; }
+</style>
 </head>
 <body>
 <header class="top">
@@ -128,6 +271,14 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
     <button class="btn" id="btnAcceso">🔒 Acceso</button>
     <!-- NUEVO: botón Admin que abre el mismo modal -->
     <button class="btn" id="btnAdmin" title="Abrir panel de administración">Admin</button>
+  </div>
+
+  <div class="theme-toggle" style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+    <label for="themeSelect" class="small">Tema</label>
+    <select id="themeSelect" class="small" style="padding:4px 6px">
+      <option value="light">Blanco</option>
+      <option value="blue">Azul</option>
+    </select>
   </div>
 </header>
 
@@ -254,6 +405,7 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
         </label>
         <span class="small">PR = rol fijo. PA = marcar este mes para habilitar horas.</span>
       </div>
+      <div class="row admin-only-tools"><button class="btn" id="btnSyncEntradas" title="Guardar (igual que en Resumen anual)">Guardar</button></div>
       <table class="table" id="tblEntradas">
         <thead>
           <tr>
@@ -281,6 +433,10 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
         <button class="btn" id="btnExportGrupo">Descargar lista del grupo</button>
       </div>
       <div class="kpi">
+        <div class="row" style="margin-top:8px">
+          
+        </div>
+    
         <div><span id="gCount">0</span>Personas en el grupo</div>
         <div><span id="gPR">0</span>Precursores regulares</div>
         <div><span id="gPA">0</span>Precursores auxiliares (este mes)</div>
@@ -367,6 +523,10 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
       </div>
       <hr>
       <div class="kpi">
+        <div class="row" style="margin-top:8px">
+          <button class="btn primary" id="btnGuardarAsistencia" type="button" onclick="if(window.confirm('¿Deseas guardar la asistencia del mes actual?')){try{if(typeof window.guardarAsistenciaDelMes==='function'){window.guardarAsistenciaDelMes();}else if(typeof window.guardarAsistencia==='function'){window.guardarAsistencia();}window.alert('¡Listo! Se guardó la asistencia del mes.');}catch(e){console.error(e);window.alert('Ocurrió un error al guardar la asistencia.');}} return false;">Guardar asistencia del mes</button>
+        </div>
+    
         <div><span id="esTot">0</span>Total entre semana</div>
         <div><span id="esProm">0</span>Promedio entre semana</div>
         <div><span id="fsTot">0</span>Total fin de semana</div>
@@ -380,6 +540,10 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
     <div class="card section-title"><h2>Resumen mensual</h2></div>
     <div class="card print-area">
       <div class="kpi">
+        <div class="row" style="margin-top:8px">
+          
+        </div>
+    
         <div><span id="rmPubAct">0</span>Publicadores activos (PR + PA + PUB que predicaron)</div>
         <div><span id="rmIrreg">0</span>Irregulares</div>
         <div><span id="rmInact">0</span>Inactivos</div>
@@ -947,6 +1111,21 @@ document.addEventListener('keydown', (e)=>{
 
 
 // === Guardar desde Personas (reusa el botón de Resumen anual) ===
+// === Guardar desde Entradas (reusa el botón de Resumen anual) ===
+(function(){
+  const b = document.getElementById('btnSyncEntradas');
+  if(!b) return;
+  b.addEventListener('click', ()=>{
+    if(!isAdmin()) return alert('Solo admin.');
+    const ok = confirm('¿Está seguro que desea guardar los cambios de Entradas por grupo?');
+    if(!ok) return;
+    const a = document.getElementById('btnSyncNow');
+    if(a){ a.click(); }
+    else if(typeof save === 'function'){ save(); alert('Datos guardados.'); }
+    else { alert('No se encontró acción de guardado.'); }
+  });
+})();
+
 (function(){
   const x = document.getElementById('btnSyncNowPersonas');
   if(!x) return;
@@ -1553,7 +1732,57 @@ $('#btnPrintCard').addEventListener('click',()=>{
       .s21-foot{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:12px;color:#333}
       .s21-foot .line{min-width:220px;border-top:1px solid #555;padding-top:3px;text-align:center}
     </style>
-    </head><body>${document.querySelector('#cardPanel').outerHTML}</body></html>`;
+    <style id="theme-override">
+  :root {
+    --bg: #ffffff;
+    --fg: #111827;
+    --muted: #6b7280;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --accent: #0F62FE;
+    --accent-contrast: #ffffff;
+    --surface: #f8fafc;
+    --table-header: #f1f5f9;
+    --input-bg: #ffffff;
+    --link: #0F62FE;
+  }
+  [data-theme="blue"] {
+    --bg: #0a2a6b;
+    --fg: #f8fafc;
+    --muted: #cbd5e1;
+    --card: #0f347d;
+    --border: rgba(255,255,255,0.18);
+    --accent: #60a5fa;
+    --accent-contrast: #0a172e;
+    --surface: #0c2f77;
+    --table-header: rgba(255,255,255,0.08);
+    --input-bg: rgba(255,255,255,0.1);
+    --link: #93c5fd;
+  }
+
+  body { background: var(--bg); color: var(--fg); }
+  header.top, .tabs { background: var(--surface); color: var(--fg); }
+  a { color: var(--link); }
+
+  .card, .print-area { background: var(--card); color: var(--fg); border-color: var(--border); }
+  .card.section-title { background: var(--surface); }
+  .table { background: var(--card); color: var(--fg); border-color: var(--border); }
+  .table thead { background: var(--table-header); color: var(--fg); }
+  .table td, .table th { border-color: var(--border); }
+
+  input, select, textarea { background: var(--input-bg); color: var(--fg); border-color: var(--border); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+
+  .btn { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+  .btn.primary, .btn:hover { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+  .pill { background: var(--table-header); color: var(--fg); border-color: var(--border); }
+
+  .kpi { color: var(--fg); }
+  .small { color: var(--muted); }
+
+  * { transition: background-color .20s ease, color .20s ease, border-color .20s ease; }
+</style>
+</head><body>${document.querySelector('#cardPanel').outerHTML}</body></html>`;
   w.document.write(html); w.document.close(); w.focus(); w.print();
 });
 
@@ -1674,7 +1903,57 @@ async function downloadBatch(mode){
         .s21-foot{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:12px;color:#333}
         .s21-foot .line{min-width:220px;border-top:1px solid #555;padding-top:3px;text-align:center}
       </style>
-      </head><body style="background:#fff;color:#111">${htmlCards}</body></html>`;
+      <style id="theme-override">
+  :root {
+    --bg: #ffffff;
+    --fg: #111827;
+    --muted: #6b7280;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --accent: #0F62FE;
+    --accent-contrast: #ffffff;
+    --surface: #f8fafc;
+    --table-header: #f1f5f9;
+    --input-bg: #ffffff;
+    --link: #0F62FE;
+  }
+  [data-theme="blue"] {
+    --bg: #0a2a6b;
+    --fg: #f8fafc;
+    --muted: #cbd5e1;
+    --card: #0f347d;
+    --border: rgba(255,255,255,0.18);
+    --accent: #60a5fa;
+    --accent-contrast: #0a172e;
+    --surface: #0c2f77;
+    --table-header: rgba(255,255,255,0.08);
+    --input-bg: rgba(255,255,255,0.1);
+    --link: #93c5fd;
+  }
+
+  body { background: var(--bg); color: var(--fg); }
+  header.top, .tabs { background: var(--surface); color: var(--fg); }
+  a { color: var(--link); }
+
+  .card, .print-area { background: var(--card); color: var(--fg); border-color: var(--border); }
+  .card.section-title { background: var(--surface); }
+  .table { background: var(--card); color: var(--fg); border-color: var(--border); }
+  .table thead { background: var(--table-header); color: var(--fg); }
+  .table td, .table th { border-color: var(--border); }
+
+  input, select, textarea { background: var(--input-bg); color: var(--fg); border-color: var(--border); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+
+  .btn { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+  .btn.primary, .btn:hover { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+  .pill { background: var(--table-header); color: var(--fg); border-color: var(--border); }
+
+  .kpi { color: var(--fg); }
+  .small { color: var(--muted); }
+
+  * { transition: background-color .20s ease, color .20s ease, border-color .20s ease; }
+</style>
+</head><body style="background:#fff;color:#111">${htmlCards}</body></html>`;
       w.document.write(html); w.document.close(); w.focus(); w.print();
       alert('Se abrió la vista de impresión como plan B. Elige “Guardar como PDF”.');
     }catch(e2){
@@ -1726,7 +2005,57 @@ function printBatch(mode){
     .s21-foot{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:12px;color:#333}
     .s21-foot .line{min-width:220px;border-top:1px solid #555;padding-top:3px;text-align:center}
   </style>
-  </head><body style="background:#fff;color:#111">${htmlCards}</body></html>`;
+  <style id="theme-override">
+  :root {
+    --bg: #ffffff;
+    --fg: #111827;
+    --muted: #6b7280;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --accent: #0F62FE;
+    --accent-contrast: #ffffff;
+    --surface: #f8fafc;
+    --table-header: #f1f5f9;
+    --input-bg: #ffffff;
+    --link: #0F62FE;
+  }
+  [data-theme="blue"] {
+    --bg: #0a2a6b;
+    --fg: #f8fafc;
+    --muted: #cbd5e1;
+    --card: #0f347d;
+    --border: rgba(255,255,255,0.18);
+    --accent: #60a5fa;
+    --accent-contrast: #0a172e;
+    --surface: #0c2f77;
+    --table-header: rgba(255,255,255,0.08);
+    --input-bg: rgba(255,255,255,0.1);
+    --link: #93c5fd;
+  }
+
+  body { background: var(--bg); color: var(--fg); }
+  header.top, .tabs { background: var(--surface); color: var(--fg); }
+  a { color: var(--link); }
+
+  .card, .print-area { background: var(--card); color: var(--fg); border-color: var(--border); }
+  .card.section-title { background: var(--surface); }
+  .table { background: var(--card); color: var(--fg); border-color: var(--border); }
+  .table thead { background: var(--table-header); color: var(--fg); }
+  .table td, .table th { border-color: var(--border); }
+
+  input, select, textarea { background: var(--input-bg); color: var(--fg); border-color: var(--border); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+
+  .btn { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+  .btn.primary, .btn:hover { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+  .pill { background: var(--table-header); color: var(--fg); border-color: var(--border); }
+
+  .kpi { color: var(--fg); }
+  .small { color: var(--muted); }
+
+  * { transition: background-color .20s ease, color .20s ease, border-color .20s ease; }
+</style>
+</head><body style="background:#fff;color:#111">${htmlCards}</body></html>`;
   w.document.write(htmlDoc); w.document.close(); w.focus(); w.print();
 }
 
@@ -1829,7 +2158,57 @@ document.getElementById('btnS88pdf').addEventListener('click', async ()=>{
           .table th,.table td{border:1px solid #333;padding:6px 6px;font-size:12.5px}
           .table th{text-align:center;background:#f1f2f6}
         </style>
-        </head><body>${document.querySelector('#s88panel').outerHTML}</body></html>`;
+        <style id="theme-override">
+  :root {
+    --bg: #ffffff;
+    --fg: #111827;
+    --muted: #6b7280;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --accent: #0F62FE;
+    --accent-contrast: #ffffff;
+    --surface: #f8fafc;
+    --table-header: #f1f5f9;
+    --input-bg: #ffffff;
+    --link: #0F62FE;
+  }
+  [data-theme="blue"] {
+    --bg: #0a2a6b;
+    --fg: #f8fafc;
+    --muted: #cbd5e1;
+    --card: #0f347d;
+    --border: rgba(255,255,255,0.18);
+    --accent: #60a5fa;
+    --accent-contrast: #0a172e;
+    --surface: #0c2f77;
+    --table-header: rgba(255,255,255,0.08);
+    --input-bg: rgba(255,255,255,0.1);
+    --link: #93c5fd;
+  }
+
+  body { background: var(--bg); color: var(--fg); }
+  header.top, .tabs { background: var(--surface); color: var(--fg); }
+  a { color: var(--link); }
+
+  .card, .print-area { background: var(--card); color: var(--fg); border-color: var(--border); }
+  .card.section-title { background: var(--surface); }
+  .table { background: var(--card); color: var(--fg); border-color: var(--border); }
+  .table thead { background: var(--table-header); color: var(--fg); }
+  .table td, .table th { border-color: var(--border); }
+
+  input, select, textarea { background: var(--input-bg); color: var(--fg); border-color: var(--border); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+
+  .btn { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+  .btn.primary, .btn:hover { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+  .pill { background: var(--table-header); color: var(--fg); border-color: var(--border); }
+
+  .kpi { color: var(--fg); }
+  .small { color: var(--muted); }
+
+  * { transition: background-color .20s ease, color .20s ease, border-color .20s ease; }
+</style>
+</head><body>${document.querySelector('#s88panel').outerHTML}</body></html>`;
         w.document.write(html); w.document.close(); w.focus(); w.print();
         alert('Se abrió la vista de impresión. Elige “Guardar como PDF”.');
       }catch(e3){
@@ -1914,7 +2293,132 @@ function renderAll(){ renderPersonas(); $('#fGrupo').value=$('#fGrupo').value||'
 bindAsist();
 $('#s88SY').value = serviceYearStartFrom(Y,M);
 renderAll();
+
+
+// Guardar asistencia del mes (con confirmación)
+(function(){
+  const btn = document.getElementById('btnGuardarAsistencia');
+  if(!btn) return;
+  btn.addEventListener('click', ()=>{
+    if(!isAdmin()) return alert('Solo admin puede guardar.');
+    const ok = confirm('¿Deseas guardar la asistencia del mes actual?');
+    if(!ok) return;
+
+    const es = [], fs = [];
+    for(let i=1;i<=6;i++){
+      const ev = nonneg(document.getElementById('es'+i)?.value||0);
+      const fv = nonneg(document.getElementById('fs'+i)?.value||0);
+      es.push(ev); fs.push(fv);
+    }
+    const ym = ymKey(Y,M);
+    if(!state.meses[ym]) state.meses[ym] = { per:{}, es:[0,0,0,0,0,0], fs:[0,0,0,0,0,0] };
+    state.meses[ym].es = es;
+    state.meses[ym].fs = fs;
+
+    save();
+    if(typeof renderAsist==='function') renderAsist();
+    if(typeof renderResumen==='function') renderResumen();
+    if(typeof renderS88==='function') renderS88();
+
+    if(typeof setSyncMsg==='function') setSyncMsg('Asistencia del mes guardada.');
+    alert('¡Listo! Se guardó la asistencia del mes.');
+  });
 })();
+
+
+// === Theme switcher ===
+(function(){
+  const KEY='APP_THEME';
+  const sel = document.getElementById('themeSelect');
+  function applyTheme(t){
+    const theme = (t==='blue') ? 'blue' : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    if(sel) sel.value = theme==='blue' ? 'blue' : 'light';
+    try{ localStorage.setItem(KEY, theme); }catch(e){}
+  }
+  const saved = (localStorage.getItem(KEY)||'light');
+  applyTheme(saved);
+  if(sel){
+    sel.addEventListener('change', ()=> applyTheme(sel.value));
+  }
+})();
+})();
+
+
+// === Guardar Asistencia (con confirmación) ===
+(function(){
+  const btn = document.getElementById('btnGuardarAsistencia');
+  if(!btn) return;
+
+  function getInt(id){
+    const el = document.getElementById(id);
+    const v = el && el.value !== '' ? parseInt(el.value, 10) : 0;
+    return Number.isFinite(v) ? v : 0;
+  }
+
+  btn.addEventListener('click', function(){
+    // Preguntar confirmación
+    const ok = confirm('¿Deseas guardar la asistencia del mes?');
+    if(!ok) return;
+
+    try{
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = now.getMonth()+1;
+      const ym = y + '-' + String(m).padStart(2,'0');
+
+      // Preparar objeto de asistencia
+      const asistencia = {
+        entreSemana: [getInt('es1'),getInt('es2'),getInt('es3'),getInt('es4'),getInt('es5'),getInt('es6')],
+        finSemana:   [getInt('fs1'),getInt('fs2'),getInt('fs3'),getInt('fs4'),getInt('fs5'),getInt('fs6')],
+        totalEntreSemana: 0,
+        totalFinSemana: 0,
+        totalMes: 0,
+        savedAt: now.toISOString()
+      };
+      asistencia.totalEntreSemana = asistencia.entreSemana.reduce((a,b)=>a+b,0);
+      asistencia.totalFinSemana   = asistencia.finSemana.reduce((a,b)=>a+b,0);
+      asistencia.totalMes         = asistencia.totalEntreSemana + asistencia.totalFinSemana;
+
+      // Asegurar estructura en state
+      if(!state.meses) state.meses = {};
+      if(!state.meses[ym]) state.meses[ym] = {};
+      state.meses[ym].asistencia = asistencia;
+      state.lastSaved = asistencia.savedAt;
+
+      // Persistir
+      save && save();
+
+      // Confirmación visual
+      alert('✅ Asistencia guardada. Total del mes: ' + asistencia.totalMes);
+    }catch(e){
+      console.error('Error guardando asistencia', e);
+      alert('❌ Ocurrió un error y no se pudo guardar.');
+    }
+  });
+})();
+
 </script>
 </body>
 </html>
+\n<script>
+  (function(){
+    const KEY = 'cong_theme';
+    const sel = document.getElementById('themeSelect');
+    const root = document.documentElement;
+
+    function applyTheme(v){
+      if(v==='blue'){ root.setAttribute('data-theme','blue'); }
+      else { root.removeAttribute('data-theme'); }
+    }
+    const saved = localStorage.getItem(KEY) || 'light';
+    applyTheme(saved);
+    if(sel){ sel.value = (saved==='blue'?'blue':'light');
+      sel.addEventListener('change', ()=>{
+        const v = sel.value==='blue' ? 'blue' : 'light';
+        localStorage.setItem(KEY, v);
+        applyTheme(v);
+      });
+    }
+  })();
+</script>\n
