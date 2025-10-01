@@ -76,9 +76,15 @@
   .badge-role{border-color:var(--border);color:var(--fg);background:var(--table-header);}
   .badge-pr{background:color-mix(in oklab, var(--accent) 25%, transparent);}
   .badge-pa{background:color-mix(in oklab, #22c55e 25%, transparent);}
-  .badge-pub{background:color-mix(in oklab, #ef4444 25%, transparent);}
+  .badge-pub{background:color-mix(in oklab, #6b7280 25%, transparent);}
 
   *{transition:background-color .20s ease,color .20s ease,border-color .20s ease;}
+
+  .row-sacado{background:transparent !important;}
+
+/* Highlight name in red when 'Sacado' */
+.row-sacado td:first-child{ color:#dc2626 !important; font-weight:600; }
+
 </style>\n<!doctype html>
 <html lang="es" data-theme="dark">
 <head>
@@ -295,6 +301,7 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
   
   <button data-tab="pr">9) PR (lista)</button>
   <button data-tab="pa">10) PA (lista)</button>
+  <button data-tab="irreg">11) Irregulares / Inactivos</button>
 </div>
 
   <!-- PERSONAS -->
@@ -383,7 +390,7 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
             <th>Nombre</th><th>Grupo</th><th>PR</th>
             <th>Nacimiento</th><th>Bautismo</th><th>Sexo</th><th>Esperanza</th>
             <th>Anc.</th><th>SM</th><th>PE</th><th>Mis.</th>
-            <th>Override</th><th>Acciones</th>
+            <th>Override</th><th>Sacado</th><th>Fecha sacado</th><th>Acciones</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -745,6 +752,25 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
     </table>
   </div>
 </section>
+<!-- Irregulares / Inactivos -->
+<section id="irreg" class="tab">
+  <div class="card section-title"><h2>Irregulares / Inactivos</h2></div>
+  <div class="card">
+    <div class="kpi">
+      <div><span id="totIrreg">0</span>Irregulares</div>
+      <div><span id="totInact">0</span>Inactivos</div>
+      <div><span id="totSac">0</span>Sacados</div>
+    </div>
+    <hr>
+    <table class="table" id="tblIrreg">
+      <thead>
+        <tr><th>Nombre</th><th>Grupo</th><th>Estado</th><th>Desde</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
 
 
 <!-- Contenedor oculto para PDF por lotes -->
@@ -852,8 +878,10 @@ function updateAdminUI(){ $('#auth').textContent=isAdmin()?'Admin':'Bloqueado'; 
 
 // ===== UI Base =====
 $('#anio').value=Y; $('#mes').value=M;
-$('#anio').addEventListener('change',()=>{ Y=+$('#anio').value||Y; renderAll(); save(); });
-$('#mes').addEventListener('change',()=>{ M=+$('#mes').value||M; renderAll(); save(); });
+$('#anio').addEventListener('change',()=>{ Y=+$('#anio').value||Y; renderAll();
+renderIrregInact(); save(); });
+$('#mes').addEventListener('change',()=>{ M=+$('#mes').value||M; renderAll();
+renderIrregInact(); save(); });
 $$('.tabs button').forEach(b=>b.addEventListener('click',()=>{ $$('.tabs button').forEach(x=>x.classList.toggle('active',x===b)); $$('.tab').forEach(x=>x.classList.toggle('active', x.id===b.dataset.tab)); }));
 
 // Modal Acceso / Admin
@@ -873,53 +901,99 @@ function renderPersonas(){
   const tb=$('#tblPersonas tbody'); tb.innerHTML='';
   state.personas.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
   for(const p of state.personas){
+    // (fix) removed to allow showing sacados in list
+    function applySacadoRowState(tr, p){
+      const inputs = tr.querySelectorAll('input, select, textarea, button');
+      if(p.sacado){
+        tr.classList.add('row-sacado');
+        inputs.forEach(el=>{
+          // permitir solamente el checkbox "Sacado" y su fecha
+          const id = (el.id||'') + (el.name||'') + (el.type||'');
+          const isSacadoToggle = (el.type==='checkbox' && el !== null && (el.closest('td')?.previousSibling?.textContent||'').includes('Override')) ? false : false;
+          // Habilitar solo los controles de Sacado (nuestros dos últimos td)
+        });
+        // Deshabilitar todo y re-habilitar solo controles Sacado
+        inputs.forEach(el=> el.disabled = true);
+        // Rehabilitar casilla y fecha de "Sacado"
+        const tds = tr.querySelectorAll('td');
+        const sacTd = tds[tds.length-3]; // Sacado checkbox
+        const sacF  = tds[tds.length-2]; // Fecha sacado (month)
+        sacTd.querySelectorAll('input,select,textarea,button').forEach(el=> el.disabled=false);
+        sacF.querySelectorAll('input,select,textarea,button').forEach(el=> el.disabled=false);
+      }else{
+        tr.classList.remove('row-sacado');
+        inputs.forEach(el=> el.disabled = false);
+      }
+    }
     const tr=document.createElement('tr');
     const tdN=document.createElement('td'); tdN.textContent=p.nombre; tr.appendChild(tdN);
 
     const tdG=document.createElement('td');
     const selG=document.createElement('select'); [1,2,3,4,5].forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent='Grupo '+g; if(p.grupo==g) o.selected=true; selG.appendChild(o); });
-    selG.addEventListener('change',()=>{ p.grupo=+selG.value; save(); renderEntradas(); renderGrupo(); fillNames(); });
+    selG.addEventListener('change',()=>{ p.grupo=+selG.value; save(); renderEntradas(); renderIrregInact(); renderGrupo(); renderIrregInact(); fillNames(); });
     tdG.appendChild(selG); tr.appendChild(tdG);
 
     const tdPR=document.createElement('td');
     const selPR=document.createElement('select'); [{v:0,t:'No'},{v:1,t:'Sí'}].forEach(o=>{ const opt=document.createElement('option'); opt.value=o.v; opt.textContent=o.t; if((p.pr?1:0)==o.v) opt.selected=true; selPR.appendChild(opt); });
-    selPR.addEventListener('change',()=>{ p.pr = selPR.value==='1'; save(); renderEntradas(); renderGrupo(); renderCardIfSame(p.id); });
+    selPR.addEventListener('change',()=>{ p.pr = selPR.value==='1'; save(); renderEntradas(); renderIrregInact(); renderGrupo(); renderIrregInact(); renderCardIfSame(p.id); renderIrregInact(); });
     tdPR.appendChild(selPR); tr.appendChild(tdPR);
+    if(p.sacado){ selPR.value='0'; }
 
     const tdNac=document.createElement('td');
-    const inpNac=document.createElement('input'); inpNac.type='date'; inpNac.value=p.nac||''; inpNac.addEventListener('change',()=>{ p.nac=inpNac.value||''; save(); renderCardIfSame(p.id); });
+    const inpNac=document.createElement('input'); inpNac.type='date'; inpNac.value=p.nac||''; inpNac.addEventListener('change',()=>{ p.nac=inpNac.value||''; save(); renderCardIfSame(p.id); renderIrregInact(); });
     tdNac.appendChild(inpNac); tr.appendChild(tdNac);
 
     const tdBau=document.createElement('td');
-    const inpBau=document.createElement('input'); inpBau.type='date'; inpBau.value=p.bau||''; inpBau.addEventListener('change',()=>{ p.bau=inpBau.value||''; save(); renderCardIfSame(p.id); });
+    const inpBau=document.createElement('input'); inpBau.type='date'; inpBau.value=p.bau||''; inpBau.addEventListener('change',()=>{ p.bau=inpBau.value||''; save(); renderCardIfSame(p.id); renderIrregInact(); });
     tdBau.appendChild(inpBau); tr.appendChild(tdBau);
 
     const tdSexo=document.createElement('td');
     const selSexo=document.createElement('select'); ['', 'Hombre','Mujer'].forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v||'—'; if(p.sexo===v) o.selected=true; selSexo.appendChild(o); });
-    selSexo.addEventListener('change',()=>{ p.sexo=selSexo.value; save(); renderCardIfSame(p.id); });
+    selSexo.addEventListener('change',()=>{ p.sexo=selSexo.value; save(); renderCardIfSame(p.id); renderIrregInact(); });
     tdSexo.appendChild(selSexo); tr.appendChild(tdSexo);
 
     const tdEsp=document.createElement('td');
     const selEsp=document.createElement('select'); ['', 'Otras ovejas','Ungido'].forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v||'—'; if(p.esperanza===v) o.selected=true; selEsp.appendChild(o); });
-    selEsp.addEventListener('change',()=>{ p.esperanza=selEsp.value; save(); renderCardIfSame(p.id); });
+    selEsp.addEventListener('change',()=>{ p.esperanza=selEsp.value; save(); renderCardIfSame(p.id); renderIrregInact(); });
     tdEsp.appendChild(selEsp); tr.appendChild(tdEsp);
 
-    const tdAnc=document.createElement('td'); const cAnc=document.createElement('input'); cAnc.type='checkbox'; cAnc.checked=!!p.anciano; cAnc.addEventListener('change',()=>{ p.anciano=cAnc.checked; save(); renderCardIfSame(p.id); }); tdAnc.appendChild(cAnc); tr.appendChild(tdAnc);
-    const tdSM=document.createElement('td'); const cSM=document.createElement('input'); cSM.type='checkbox'; cSM.checked=!!p.sm; cSM.addEventListener('change',()=>{ p.sm=cSM.checked; save(); renderCardIfSame(p.id); }); tdSM.appendChild(cSM); tr.appendChild(tdSM);
-    const tdPE=document.createElement('td'); const cPE=document.createElement('input'); cPE.type='checkbox'; cPE.checked=!!p.pe; cPE.addEventListener('change',()=>{ p.pe=cPE.checked; save(); renderCardIfSame(p.id); }); tdPE.appendChild(cPE); tr.appendChild(tdPE);
-    const tdMis=document.createElement('td'); const cMis=document.createElement('input'); cMis.type='checkbox'; cMis.checked=!!p.mis; cMis.addEventListener('change',()=>{ p.mis=cMis.checked; save(); renderCardIfSame(p.id); }); tdMis.appendChild(cMis); tr.appendChild(tdMis);
+    const tdAnc=document.createElement('td'); const cAnc=document.createElement('input'); cAnc.type='checkbox'; cAnc.checked=!!p.anciano; cAnc.addEventListener('change',()=>{ p.anciano=cAnc.checked; save(); renderCardIfSame(p.id); renderIrregInact(); }); tdAnc.appendChild(cAnc); tr.appendChild(tdAnc);
+    if(p.sacado){ cAnc.checked=false; }
+    const tdSM=document.createElement('td'); const cSM=document.createElement('input'); cSM.type='checkbox'; cSM.checked=!!p.sm; cSM.addEventListener('change',()=>{ p.sm=cSM.checked; save(); renderCardIfSame(p.id); renderIrregInact(); }); tdSM.appendChild(cSM); tr.appendChild(tdSM);
+    if(p.sacado){ cSM.checked=false; }
+    const tdPE=document.createElement('td'); const cPE=document.createElement('input'); cPE.type='checkbox'; cPE.checked=!!p.pe; cPE.addEventListener('change',()=>{ p.pe=cPE.checked; save(); renderCardIfSame(p.id); renderIrregInact(); }); tdPE.appendChild(cPE); tr.appendChild(tdPE);
+    if(p.sacado){ cPE.checked=false; }
+    const tdMis=document.createElement('td'); const cMis=document.createElement('input'); cMis.type='checkbox'; cMis.checked=!!p.mis; cMis.addEventListener('change',()=>{ p.mis=cMis.checked; save(); renderCardIfSame(p.id); renderIrregInact(); }); tdMis.appendChild(cMis); tr.appendChild(tdMis);
+    if(p.sacado){ cMis.checked=false; }
 
     const tdOv=document.createElement('td');
     const selOv=document.createElement('select');
     [{v:'',t:'Auto'},{v:'irregular',t:'Irregular'},{v:'inactivo',t:'Inactivo'}].forEach(o=>{ const opt=document.createElement('option'); opt.value=o.v; opt.textContent=o.t; if((p.override||'')===o.v) opt.selected=true; selOv.appendChild(opt); });
-    selOv.addEventListener('change',()=>{ p.override = selOv.value || null; p.overrideSince = ymKey(Y,M); save(); renderResumen(); renderCardIfSame(p.id); });
+    selOv.addEventListener('change',()=>{ p.override = selOv.value || null; p.overrideSince = ymKey(Y,M); save(); renderResumen(); renderIrregInact(); renderCardIfSame(p.id); renderIrregInact(); });
     tdOv.appendChild(selOv); tr.appendChild(tdOv);
+
+    const tdSac=document.createElement('td');
+    const cSac=document.createElement('input'); cSac.type='checkbox'; cSac.checked=!!p.sacado;
+    cSac.addEventListener('change',()=>{ 
+      p.sacado = cSac.checked; 
+      if(p.sacado && !p.sacadoDesde){ p.sacadoDesde = ymKey(Y,M); }
+      save(); renderIrregInact(); renderCardIfSame(p.id); renderEntradas(); renderGrupo(); renderAsist(); renderResumen(); renderAnual(); renderPRList(); renderPAList(); 
+    });
+    tdSac.appendChild(cSac); tr.appendChild(tdSac);
+
+    const tdSacF=document.createElement('td');
+    const inpSacF=document.createElement('input'); inpSacF.type='month'; inpSacF.value=(p.sacadoDesde||'');
+    inpSacF.addEventListener('change',()=>{ p.sacadoDesde = inpSacF.value||''; save(); renderIrregInact(); renderCardIfSame(p.id); renderEntradas(); renderGrupo(); renderAsist(); renderResumen(); renderAnual(); renderPRList(); renderPAList(); });
+    tdSacF.appendChild(inpSacF); tr.appendChild(tdSacF);
+
 
     const tdA=document.createElement('td');
     const del=document.createElement('button'); del.textContent='Eliminar'; del.className='btn';
-    del.addEventListener('click',()=>{ if(confirm('¿Eliminar a '+p.nombre+'?')){ for(const k of Object.keys(state.meses)){ delete state.meses[k]?.per?.[p.id]; } state.personas = state.personas.filter(x=>x.id!==p.id); save(); renderAll(); }});
+    del.addEventListener('click',()=>{ if(confirm('¿Eliminar a '+p.nombre+'?')){ for(const k of Object.keys(state.meses)){ delete state.meses[k]?.per?.[p.id]; } state.personas = state.personas.filter(x=>x.id!==p.id); save(); renderAll();
+renderIrregInact(); }});
     tdA.appendChild(del); tr.appendChild(tdA);
 
+    applySacadoRowState(tr,p);
     tb.appendChild(tr);
   }
 }
@@ -931,9 +1005,10 @@ $('#btnAdd').addEventListener('click',()=>{
   const sexo=$('#pSexo').value||''; const esperanza=$('#pEsp').value||'';
   const anciano=$('#pAnc').checked; const sm=$('#pSM').checked; const pe=$('#pPE').checked; const mis=$('#pMis').checked;
   if(state.personas.some(p=>p.nombre.toLowerCase()===nombre.toLowerCase())) return alert('Ese nombre ya existe.');
-  state.personas.push({id:uid(), nombre, grupo, pr, nac, bau, sexo, esperanza, anciano, sm, pe, mis, override:null, overrideSince:null, createdYM: ymKey(Y,M)});
+  state.personas.push({id:uid(), nombre, grupo, pr, nac, bau, sexo, esperanza, anciano, sm, pe, mis, override:null, overrideSince:null, createdYM: ymKey(Y,M), sacado:false, sacadoDesde:'' });
   $('#pNombre').value=''; $('#pNac').value=''; $('#pBau').value=''; $('#pSexo').value=''; $('#pEsp').value=''; ['pAnc','pSM','pPE','pMis'].forEach(id=>$('#'+id).checked=false);
   save(); renderAll();
+renderIrregInact();
 });
 $('#btnImport').addEventListener('click',()=>{
   if(!isAdmin()) return alert('Solo admin.');
@@ -952,7 +1027,8 @@ $('#btnImport').addEventListener('click',()=>{
       state.personas.push({id:uid(), nombre:n, grupo:g, pr, nac, bau, sexo, esperanza, anciano, sm, pe, mis, override:null, overrideSince:null, createdYM: ymKey(Y,M)});
       added++;
     }
-    save(); renderAll(); alert('Importadas: '+added);
+    save(); renderAll();
+renderIrregInact(); alert('Importadas: '+added);
   };
   reader.readAsText(f,'utf-8');
 });
@@ -1011,6 +1087,7 @@ document.getElementById('btnDelAll').addEventListener('click', ()=>{
     }
     save();
     renderAll();
+renderIrregInact();
     // Reset UI
     const chk = document.getElementById('chkDelAll'); if(chk) chk.checked = false;
     alert('Se eliminaron todas las personas.');
@@ -1172,6 +1249,7 @@ document.addEventListener('keydown', (e)=>{
       person.nombre = to.trim();
       save && save();
       if(typeof renderAll === 'function') renderAll();
+renderIrregInact();
       if(typeof refreshPersonDatalist === 'function') try{ refreshPersonDatalist(); }catch(e){}
       alert('Nombre actualizado correctamente.');
     }catch(e){
@@ -1251,7 +1329,7 @@ $('#fGrupo').addEventListener('change',()=>renderEntradas());
 function roleBadge(p, monthPA){ if(p.pr) return '<span class="badge-role badge-pr">PR</span>'; if(monthPA) return '<span class="badge-role badge-pa">PA</span>'; return '<span class="badge-role badge-pub">PUB</span>'; }
 function renderEntradas(){
   const g=+$('#fGrupo').value||1, tb=$('#tblEntradas tbody'); tb.innerHTML='';
-  const ps=state.personas.filter(p=>p.grupo==g).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+  const ps=state.personas.filter(p => p.grupo == g && !p.sacado).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
   for(const p of ps){
     const mpp=mp(Y,M,p.id);
     const tr=document.createElement('tr');
@@ -1261,30 +1339,30 @@ function renderEntradas(){
 
     const tdPA=document.createElement('td');
     const cPA=document.createElement('input'); cPA.type='checkbox'; cPA.checked=!!mpp.pa;
-    cPA.addEventListener('change',()=>{ mpp.pa=cPA.checked; if(!mpp.pa){ mpp.horas=0; } save(); renderEntradas(); renderResumen(); renderGrupo(); renderCardIfSame(p.id); });
+    cPA.addEventListener('change',()=>{ mpp.pa=cPA.checked; if(!mpp.pa){ mpp.horas=0; } save(); renderEntradas(); renderIrregInact(); renderResumen(); renderIrregInact(); renderGrupo(); renderIrregInact(); renderCardIfSame(p.id); renderIrregInact(); });
     tdPA.appendChild(cPA); tr.appendChild(tdPA);
 
     const tdPred=document.createElement('td');
     const pred=document.createElement('select'); pred.innerHTML='<option value="0">No</option><option value="1">Sí</option>';
     pred.value = mpp.predico? '1':'0';
-    pred.addEventListener('change',()=>{ mpp.predico=(pred.value==='1'); save(); renderResumen(); renderCardIfSame(p.id); });
+    pred.addEventListener('change',()=>{ mpp.predico=(pred.value==='1'); save(); renderResumen(); renderIrregInact(); renderCardIfSame(p.id); renderIrregInact(); });
     pred.disabled = (p.pr || mpp.pa);
     tdPred.appendChild(pred); tr.appendChild(tdPred);
 
     const tdH=document.createElement('td');
     const inpH=document.createElement('input'); inpH.type='number'; inpH.min='0'; inpH.step='0.25'; inpH.value=mpp.horas||0;
-    inpH.addEventListener('change',()=>{ const v=nonneg(inpH.value); mpp.horas=v; save(); renderResumen(); renderCardIfSame(p.id); });
+    inpH.addEventListener('change',()=>{ const v=nonneg(inpH.value); mpp.horas=v; save(); renderResumen(); renderIrregInact(); renderCardIfSame(p.id); renderIrregInact(); });
     inpH.disabled = !(p.pr || mpp.pa || p.mis);
     tdH.appendChild(inpH); tr.appendChild(tdH);
 
     const tdE=document.createElement('td');
     const inpE=document.createElement('input'); inpE.type='number'; inpE.min='0'; inpE.step='1'; inpE.value=mpp.est||0;
-    inpE.addEventListener('change',()=>{ const v=nonneg(inpE.value); mpp.est=v; save(); renderResumen(); renderCardIfSame(p.id); });
+    inpE.addEventListener('change',()=>{ const v=nonneg(inpE.value); mpp.est=v; save(); renderResumen(); renderIrregInact(); renderCardIfSame(p.id); renderIrregInact(); });
     tdE.appendChild(inpE); tr.appendChild(tdE);
 
     const tdNota=document.createElement('td');
     const ta=document.createElement('textarea'); ta.value=mpp.nota||''; ta.placeholder='Notas…';
-    ta.addEventListener('change',()=>{ mpp.nota = (ta.value||''); save(); renderCardIfSame(p.id); });
+    ta.addEventListener('change',()=>{ mpp.nota = (ta.value||''); save(); renderCardIfSame(p.id); renderIrregInact(); });
     tdNota.appendChild(ta); tr.appendChild(tdNota);
 
     tb.appendChild(tr);
@@ -1293,9 +1371,9 @@ function renderEntradas(){
 
 // ===== Grupos =====
 let GVIEW=1;
-$('#grpTabs').addEventListener('click',(e)=>{ if(e.target.matches('button[data-g]')){ GVIEW=+e.target.dataset.g; renderGrupo(); }});
+$('#grpTabs').addEventListener('click',(e)=>{ if(e.target.matches('button[data-g]')){ GVIEW=+e.target.dataset.g; renderGrupo(); renderIrregInact(); }});
 function renderGrupo(){
-  const ps=state.personas.filter(p=>p.grupo==GVIEW).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+  const ps=state.personas.filter(p => p.grupo == GVIEW && !p.sacado).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
   const tb=$('#tblGrupo tbody'); tb.innerHTML='';
   let cPR=0, cPA=0;
   for(const p of ps){
@@ -1313,8 +1391,8 @@ function renderGrupo(){
 // ===== Asistencia =====
 function bindAsist(){
   for(let i of [1,2,3,4,5,6]){
-    $('#es'+i).addEventListener('change',()=>{ const mon=getMonth(Y,M); mon.es[i-1]=nonneg($('#es'+i).value); save(); renderAsist(); renderResumen(); renderS88(); });
-    $('#fs'+i).addEventListener('change',()=>{ const mon=getMonth(Y,M); mon.fs[i-1]=nonneg($('#fs'+i).value); save(); renderAsist(); renderResumen(); renderS88(); });
+    $('#es'+i).addEventListener('change',()=>{ const mon=getMonth(Y,M); mon.es[i-1]=nonneg($('#es'+i).value); save(); renderAsist(); renderResumen(); renderIrregInact(); renderS88(); });
+    $('#fs'+i).addEventListener('change',()=>{ const mon=getMonth(Y,M); mon.fs[i-1]=nonneg($('#fs'+i).value); save(); renderAsist(); renderResumen(); renderIrregInact(); renderS88(); });
   }
 }
 function renderAsist(){
@@ -1348,6 +1426,59 @@ function classify(pid){
   return 'activo';
 }
 
+// === Irregulares / Inactivos (sección 11) ===
+function formatYM(ym){
+  if(!ym || typeof ym!=='string') return '—';
+  const [y,m]=ym.split('-').map(Number);
+  if(!y||!m) return '—';
+  return (MES[m]||m) + ' ' + y;
+}
+function irregularInactiveSince(pid){
+  const per = (state.personas||[]).find(x=>x.id===pid);
+  if(!per) return null;
+  if(per.override && per.overrideSince) return per.overrideSince;
+  const base = per.overrideSince || per.createdYM || ymKey(Y,M);
+  const yms = lastMonths(Y,M,6).filter(ym => ymCompare(ym, base)>=0);
+  if(yms.length===0) return null;
+  for(const ym of yms){
+    if(!reportedInMonth(pid, ym)) return ym;
+  }
+  if(per.override) return base;
+  return null;
+}
+function renderIrregInact(){
+  const tbody = document.querySelector('#tblIrreg tbody');
+  if(!tbody) return;
+  tbody.innerHTML = '';
+  let cIrr=0, cIna=0, cSac=0;
+  const rows=[];
+  for(const p of (state.personas||[])){
+    const st = classify(p.id);
+    if(p.sacado){ cSac++; rows.push({nombre:p.nombre, grupo:parseInt(p.grupo)||'', estado:'sacado', desde: p.sacadoDesde||''}); } else if(st==='irregular' || st==='inactivo'){
+      if(st==='irregular') cIrr++; else cIna++;
+      const since = irregularInactiveSince(p.id);
+      rows.push({nombre:p.nombre, grupo:parseInt(p.grupo)||'', estado:st, desde: since});
+    }
+  }
+  rows.sort((a,b)=>
+    (a.estado===b.estado?0:(a.estado==='inactivo'?1:-1)) ||
+    (a.grupo||0)-(b.grupo||0) ||
+    a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'})
+  );
+  for(const r of rows){
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${r.nombre}</td><td>${r.grupo||'—'}</td><td>${r.estado==='irregular'?'Irregular':(r.estado==='inactivo'?'Inactivo':'Sacado')}</td><td>${formatYM(r.desde)}</td>`;
+    tbody.appendChild(tr);
+  }
+  const irrEl=document.getElementById('totIrreg');
+  const inaEl=document.getElementById('totInact');
+  const sacEl=document.getElementById('totSac');
+  if(irrEl) irrEl.textContent = cIrr;
+  if(inaEl) inaEl.textContent = cIna;
+  if(sacEl) sacEl.textContent = cSac;
+}
+
+
 // ===== Resumen mensual =====
 function renderResumen(){
   const mon=getMonth(Y,M);
@@ -1358,6 +1489,8 @@ function renderResumen(){
   let activosMes=0, irreg=0, inact=0;
 
   for(const p of state.personas){
+    // (fix) removed to allow showing sacados in list
+    if(p.sacado) continue; /* skip sacados */
     const r=mp(Y,M,p.id);
     const st=classify(p.id);
     if(st==='irregular') irreg++; else if(st==='inactivo') inact++;
@@ -1385,7 +1518,7 @@ function renderResumen(){
   $('#rmPubAct').textContent=activosMes;
   $('#rmIrreg').textContent=irreg;
   $('#rmInact').textContent=inact;
-  $('#rmTotalN').textContent=state.personas.length;
+  $('#rmTotalN').textContent=state.personas.filter(p=>!p.sacado).length;
 
   $('#rmPubInf').textContent=pubInf;
   $('#rmPubEst').textContent=pubEst;
@@ -1402,7 +1535,9 @@ function renderResumen(){
   $('#rmFsTot').textContent=sFS; $('#rmFsProm').textContent=(cFS? sFS/cFS:0).toFixed(1);
 
   let countPR=0,countPA=0,countPUB=0;
-  for(const p of state.personas){ const r=mp(Y,M,p.id); if(p.pr) countPR++; else if(r.pa) countPA++; else if(r.predico) countPUB++; }
+  for(const p of state.personas){
+    // (fix) removed to allow showing sacados in list
+    if(p.sacado) continue; /* skip sacados */ const r=mp(Y,M,p.id); if(p.pr) countPR++; else if(r.pa) countPA++; else if(r.predico) countPUB++; }
   $('#rmCongTot').textContent=countPR+countPA+countPUB;
 }
 
@@ -1424,6 +1559,8 @@ function renderAnual(){
     let monthlyTotal=0;
 
     for(const p of state.personas){
+    // (fix) removed to allow showing sacados in list
+    if(p.sacado) continue; /* skip sacados */
       const r=(mon.per||{})[p.id] || {pa:false,predico:false,horas:0,est:0,nota:''};
       if(p.pr){
         PRH += nonneg(r.horas);
@@ -1447,7 +1584,9 @@ function renderAnual(){
   }
 
   let IRR=0;
-  for(const p of state.personas){ if(classify(p.id)==='irregular') IRR++; }
+  for(const p of state.personas){
+    // (fix) removed to allow showing sacados in list
+    if(p.sacado) continue; /* skip sacados */ if(classify(p.id)==='irregular') IRR++; }
 
   $('#raPRH').textContent=PRH;
   $('#raPRE').textContent=PRE;
@@ -1512,7 +1651,8 @@ document.getElementById('btnRestoreMonth').addEventListener('click',()=>{
   fetch(u).then(r=>{ if(!r.ok) throw 0; return r.json(); })
     .then(obj=>{
       if(!obj || typeof obj!=='object' || !obj.meses){ throw 0; }
-      state=obj; save(); renderAll(); setSyncMsg('Restaurado: '+ym);
+      state=obj; save(); renderAll();
+renderIrregInact(); setSyncMsg('Restaurado: '+ym);
     })
     .catch(()=> setSyncMsg('No se pudo restaurar (revisa token / permisos / mes).'));
 });
@@ -1534,6 +1674,7 @@ if(btnRestoreJSON && fileRestoreEl){
         if(!obj || typeof obj!=='object' || !obj.meses || !Array.isArray(obj.personas)) throw 0;
         const migrated = migrate(obj);
         state = migrated; save(); renderAll();
+renderIrregInact();
         setSyncMsg('Restaurado desde copia .json local.');
         alert('Restaurado correctamente desde el archivo JSON.');
       }catch{
@@ -1552,7 +1693,8 @@ const url=(localStorage.getItem(SYNC_URL)||'').trim();
   fetch(u).then(r=>{ if(!r.ok) throw 0; return r.json(); })
     .then(obj=>{
       if(!obj || typeof obj!=='object' || !obj.meses){ throw 0; }
-      state=obj; save(); renderAll(); setSyncMsg('Restaurado último respaldo.');
+      state=obj; save(); renderAll();
+renderIrregInact(); setSyncMsg('Restaurado último respaldo.');
     })
     .catch(()=> setSyncMsg('No se pudo restaurar (revisa token / permisos).'));
 });
@@ -1613,7 +1755,7 @@ function buildCardHTML(p, sy){
   });
   const totEst = rows.reduce((a,x)=>a+Number(x.est||0),0);
   const totHor = rows.reduce((a,x)=>a+Number(x.horas||0),0);
-  const estado = classify(p.id);
+  const estado = p.sacado ? 'sacado' : classify(p.id);
   const privilegios = [];
   if(p.anciano) privilegios.push('Anciano');
   if(p.sm) privilegios.push('Siervo ministerial');
@@ -1809,7 +1951,7 @@ async function downloadBatch(mode){
     let persons = [];
     if (mode === 'grupo') {
       const g = +($('#pdfGrupoSel').value || 1);
-      persons = state.personas.filter(p => p.grupo == g);
+      persons = state.personas.filter(p => p.grupo == g && !p.sacado);
       if (persons.length === 0) { alert('Ese grupo no tiene personas.'); return; }
     } else {
       persons = state.personas.slice();
@@ -1869,7 +2011,7 @@ async function downloadBatch(mode){
     try{
       const sy = parseInt($('#cardSY').value) || serviceYearStartFrom(Y, M);
       let persons = (mode==='grupo')
-        ? state.personas.filter(p => p.grupo == +($('#pdfGrupoSel').value || 1))
+        ? state.personas.filter(p => p.grupo == +($('#pdfGrupoSel' && !p.sacado).value || 1))
         : state.personas.slice();
       persons.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
 
@@ -1970,7 +2112,7 @@ document.getElementById('btnPrintTodas').addEventListener('click', ()=> printBat
 function printBatch(mode){
   const sy = parseInt($('#cardSY').value) || serviceYearStartFrom(Y, M);
   let persons = (mode==='grupo')
-    ? state.personas.filter(p => p.grupo == +($('#pdfGrupoSel').value || 1))
+    ? state.personas.filter(p => p.grupo == +($('#pdfGrupoSel' && !p.sacado).value || 1))
     : state.personas.slice();
   persons.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
 
@@ -2268,12 +2410,13 @@ function renderPAList(){
 }
 // Bind para paSY
 document.addEventListener('change', (e)=>{
-  if(e.target && e.target.id==='paSY'){ renderPAList(); }
+  if(e.target && e.target.id==='paSY'){ renderPAList();
+  renderIrregInact(); }
 });
 
 // ===== Render principal =====
 function fillNamesList(){ const dl=$('#namesList'); dl.innerHTML=''; state.personas.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'})).forEach(p=>{ const o=document.createElement('option'); o.value=p.nombre; dl.appendChild(o); }); }
-function renderAll(){ renderPersonas(); $('#fGrupo').value=$('#fGrupo').value||'1'; renderEntradas(); renderGrupo(); renderAsist(); renderResumen(); renderAnual(); renderS88(); updateAdminUI(); fillNames(); fillNamesList(); 
+function renderAll(){ renderPersonas(); $('#fGrupo').value=$('#fGrupo').value||'1'; renderEntradas(); renderIrregInact(); renderGrupo(); renderIrregInact(); renderAsist(); renderResumen(); renderIrregInact(); renderAnual(); renderS88(); updateAdminUI(); fillNames(); fillNamesList(); 
   ; // end prior renders
   // Inicializar año de servicio en la pestaña PA
   const paSYel = document.querySelector('#paSY');
@@ -2287,12 +2430,14 @@ function renderAll(){ renderPersonas(); $('#fGrupo').value=$('#fGrupo').value||'
 }
   renderPRList();
   renderPAList();
+  renderIrregInact();
 }
 
 // Inicializaciones
 bindAsist();
 $('#s88SY').value = serviceYearStartFrom(Y,M);
 renderAll();
+renderIrregInact();
 
 
 // Guardar asistencia del mes (con confirmación)
@@ -2317,7 +2462,7 @@ renderAll();
 
     save();
     if(typeof renderAsist==='function') renderAsist();
-    if(typeof renderResumen==='function') renderResumen();
+    if(typeof renderResumen==='function') renderResumen(); renderIrregInact();
     if(typeof renderS88==='function') renderS88();
 
     if(typeof setSyncMsg==='function') setSyncMsg('Asistencia del mes guardada.');
