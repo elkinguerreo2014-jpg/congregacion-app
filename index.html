@@ -813,6 +813,26 @@ function ymKey(y,m){ return y+'-'+String(m).padStart(2,'0'); }
 function ymToNum(ym){ const [y,m]=ym.split('-').map(Number); return y*100+m; }
 function ymCompare(a,b){ return ymToNum(a)-ymToNum(b); }
 
+// === Injected helpers: month handling after restore ===
+function setYM(ym){
+  if(!ym) return;
+  const [y,m] = (''+ym).split('-').map(Number);
+  if(!y || !m) return;
+  if(typeof Y !== 'undefined') Y = y;
+  if(typeof M !== 'undefined') M = m;
+  const anioEl = document.getElementById('anio');
+  const mesEl  = document.getElementById('mes');
+  if(anioEl) anioEl.value = y;
+  if(mesEl)  mesEl.value  = m;
+}
+function latestMonthKey(obj){
+  try{
+    const ks = Object.keys((obj && obj.meses) || {}).sort((a,b)=>ymCompare(a,b));
+    return ks.length ? ks[ks.length-1] : null;
+  }catch(e){ return null; }
+}
+// === End injected helpers ===
+
 function earliestMonthForPersonIn(st, pid){
   let min=null;
   if(st && st.meses){
@@ -1650,10 +1670,14 @@ document.getElementById('btnRestoreMonth').addEventListener('click',()=>{
   setSyncMsg('Restaurando mes '+ym+'…');
   fetch(u).then(r=>{ if(!r.ok) throw 0; return r.json(); })
     .then(obj=>{
-      if(!obj || typeof obj!=='object' || !obj.meses){ throw 0; }
-      state=obj; save(); renderAll();
-renderIrregInact(); setSyncMsg('Restaurado: '+ym);
-    })
+  const restored = (obj && obj.state && obj.state.meses) ? obj.state : obj;
+  if(!restored || typeof restored!=='object' || !restored.meses){ throw 0; }
+  const migrated = (typeof migrate==='function') ? migrate(restored) : restored;
+  const snap = (obj && obj.snapshotYM) || migrated.snapshotYM || ymKey(Y,M) || latestMonthKey(migrated);
+  if(snap) setYM(snap);
+  state = migrated; save(); renderAll(); if(typeof renderIrregInact==='function') renderIrregInact();
+  setSyncMsg('Restaurado: '+ (snap || ym));
+})
     .catch(()=> setSyncMsg('No se pudo restaurar (revisa token / permisos / mes).'));
 });
 document.getElementById('btnRestoreLatest').addEventListener('click',()=>{
@@ -1692,10 +1716,15 @@ const url=(localStorage.getItem(SYNC_URL)||'').trim();
   setSyncMsg('Restaurando último respaldo…');
   fetch(u).then(r=>{ if(!r.ok) throw 0; return r.json(); })
     .then(obj=>{
-      if(!obj || typeof obj!=='object' || !obj.meses){ throw 0; }
-      state=obj; save(); renderAll();
-renderIrregInact(); setSyncMsg('Restaurado último respaldo.');
-    })
+  // Normalize payload (raw state or {state,...})
+  const restored = (obj && obj.state && obj.state.meses) ? obj.state : obj;
+  if(!restored || typeof restored!=='object' || !restored.meses){ throw 0; }
+  const migrated = (typeof migrate==='function') ? migrate(restored) : restored;
+  const snap = (obj && obj.snapshotYM) || migrated.snapshotYM || latestMonthKey(migrated);
+  if(snap) setYM(snap);
+  state = migrated; save(); renderAll(); if(typeof renderIrregInact==='function') renderIrregInact();
+  setSyncMsg('Restaurado último respaldo.');
+})
     .catch(()=> setSyncMsg('No se pudo restaurar (revisa token / permisos).'));
 });
 let syncTimer=null;
