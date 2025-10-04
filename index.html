@@ -1363,9 +1363,9 @@ function renderEntradas(){
     tdPA.appendChild(cPA); tr.appendChild(tdPA);
 
     const tdPred=document.createElement('td');
-    const pred=document.createElement('select'); pred.innerHTML='<option value="0">No</option><option value="1">Sí</option>';
-    pred.value = mpp.predico? '1':'0';
-    pred.addEventListener('change',()=>{ mpp.predico=(pred.value==='1'); save(); renderResumen(); renderIrregInact(); renderCardIfSame(p.id); renderIrregInact(); });
+    const pred=document.createElement('input'); pred.type='checkbox';
+    pred.checked = !!mpp.predico;
+    pred.addEventListener('change',()=>{ mpp.predico = pred.checked; save(); renderResumen(); renderIrregInact(); renderCardIfSame(p.id); renderIrregInact(); });
     pred.disabled = (p.pr || mpp.pa);
     tdPred.appendChild(pred); tr.appendChild(tdPred);
 
